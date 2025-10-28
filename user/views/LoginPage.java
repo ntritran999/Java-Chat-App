@@ -26,7 +26,7 @@ public class LoginPage extends JPanel {
         logo.setForeground(Color.black);
         logo.setHorizontalAlignment(JLabel.CENTER);
         logo.setFont(new Font("SansSerif", Font.BOLD, 64));
-        logo.setIcon(new ImageIcon(getClass().getResource("/assets/images/chat-icon.png")));
+        logo.setIcon(new ImageIcon(getClass().getResource("/assets/images/chat-logo.png")));
         logo.setIconTextGap(20);
         
         JPanel main = new JPanel();

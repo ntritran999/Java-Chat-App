@@ -1,5 +1,7 @@
 package user.controllers;
 
+import javax.swing.JOptionPane;
+
 import user.models.*;
 import user.views.*;
 
@@ -13,14 +15,22 @@ public class UserController {
     }
 
     public void useLoginPage() {
-        userFrame.setVisible(false);
-        userFrame.setContentPane(new LoginPage());
-        userFrame.setVisible(true);
+        LoginPage lp = new LoginPage();
+        lp.getLoginButton().addActionListener(e -> {
+            JOptionPane.showMessageDialog(lp, "Đăng nhập thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        });
+        lp.getCreateAccButton().addActionListener(e -> {
+            JOptionPane.showMessageDialog(lp, "Đăng nhập thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        });
+        userFrame.setContentPane(lp);
     }
 
     public void useSignUpPage() {
-        userFrame.setVisible(false);
         userFrame.setContentPane(new SignupPage());
-        userFrame.setVisible(true);
+    }
+
+    public void useChatPage() {
+        ChatPage cp = new ChatPage();
+        userFrame.setContentPane(cp);
     }
 }
