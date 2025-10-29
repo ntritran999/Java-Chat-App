@@ -7,14 +7,17 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import static user.views.Style.*;
@@ -28,46 +31,70 @@ class IconButton extends JButton {
     }
 }
 
-class FriendPanel extends JPanel {
-    private JButton moreButton;
-    private JLabel fullName, status;
-    public FriendPanel() {
-        this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-        this.setPreferredSize(new Dimension(300, 50));
-        // this.setBackground(new Color(bgColorDark));
-
-        JPanel textPanel = new JPanel();
-        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS));
-        fullName = new JLabel("Some name");
-        fullName.setFont(new Font("SansSerif", Font.BOLD, 24));
-        status = new JLabel("Online");
-        textPanel.add(fullName);
-        textPanel.add(status);
-
-        moreButton = new IconButton("/assets/icons/more-icon.png");
-        
-        this.add(textPanel);
-        this.add(Box.createHorizontalGlue());
-        this.add(moreButton);
-    }
-
-    public JButton getMoreButton() {
-        return moreButton;
-    }
-
-    public JLabel getfullName() {
-        return fullName;
-    }
-
-    public JLabel getStatus() {
-        return status;
-    }
-
-}
-
 public class ChatPage extends JPanel {
+    public class FriendPanel extends JPanel {
+        private JButton moreButton, removeFriendButton, blockButton;
+        private JLabel fullName, status;
+        public FriendPanel(String fullName, String status) {
+            this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            this.setPreferredSize(new Dimension(300, 50));
+
+            JPanel textPanel = new JPanel();
+            textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS));
+            this.fullName = new JLabel(fullName);
+            this.fullName.setFont(new Font("SansSerif", Font.BOLD, 24));
+            this.status = new JLabel(status);
+            textPanel.add(this.fullName);
+            textPanel.add(this.status);
+
+            removeFriendButton = new JButton();
+            blockButton = new JButton();
+            moreButton = new IconButton("/assets/icons/more-icon.png");
+            moreButton.addActionListener( _ -> {
+                removeFriendButton.setText("Huỷ kết bạn");
+                removeFriendButton.setIcon(new ImageIcon(getClass().getResource("/assets/icons/trashcan-icon.png")));
+                blockButton.setText("Chặn");
+                blockButton.setIcon(new ImageIcon(getClass().getResource("/assets/icons/block-icon.png")));
+                JButton[] btns = {removeFriendButton, blockButton};
+                JOptionPane.showOptionDialog(null, 
+                                             "Bạn có muốn hủy kết bạn hoặc chặn người dùng này?", 
+                                             "Cài đặt bạn bè", 
+                                             JOptionPane.YES_NO_OPTION, 
+                                             JOptionPane.WARNING_MESSAGE, 
+                                             null, 
+                                             btns, 
+                                             btns[0]);
+            });
+            
+            this.add(textPanel);
+            this.add(Box.createHorizontalGlue());
+            this.add(moreButton);
+        }
+
+        public JButton getMoreButton() {
+            return moreButton;
+        }
+
+        public JButton getRemoveFriendButton() {
+            return removeFriendButton;
+        }
+
+        public JButton getBlockButton() {
+            return blockButton;
+        }
+
+        public JLabel getfullName() {
+            return fullName;
+        }
+
+        public JLabel getStatus() {
+            return status;
+        }
+    }
+
     private JTextField searchField;
-    private IconButton settingButton, findButton, addFriendButton, addGroupButton;
+    private JTextArea messageTextArea;
+    private IconButton settingButton, findButton, addFriendButton, addGroupButton, sendButton;
     private JPanel listPanel;
     public ChatPage() {
         this.setLayout(new BorderLayout());
@@ -114,14 +141,30 @@ public class ChatPage extends JPanel {
         
         JScrollPane friendScrollPane = new JScrollPane();
         listPanel = new JPanel();
+        listPanel.setLayout(new WrapLayout());
         friendScrollPane.setViewportView(listPanel);
-
-        listPanel.add(new FriendPanel()); // TO-DO: Replace later with actual friend panel data
         
         friendListPanel.add(searchBar, BorderLayout.NORTH);
         friendListPanel.add(friendScrollPane, BorderLayout.CENTER);
 
-        JPanel chatPanel = new JPanel();
+        JPanel chatPanel = new JPanel(new BorderLayout());
+
+        JPanel centerChatPanel = new JPanel();
+        centerChatPanel.setBackground(Color.red);
+        JPanel bottomChatPanel = new JPanel();
+
+        JScrollPane msgScrollPane = new JScrollPane();
+        messageTextArea = new JTextArea(2, 100);
+        messageTextArea.setLineWrap(true);
+        msgScrollPane.setViewportView(messageTextArea);
+        msgScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sendButton = new IconButton("/assets/icons/send-icon.png");
+
+        bottomChatPanel.add(msgScrollPane);
+        bottomChatPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomChatPanel.add(sendButton);
+        chatPanel.add(centerChatPanel, BorderLayout.CENTER);
+        chatPanel.add(bottomChatPanel, BorderLayout.SOUTH);
 
         main.add(friendListPanel, BorderLayout.WEST);
         main.add(chatPanel, BorderLayout.CENTER);
@@ -153,4 +196,11 @@ public class ChatPage extends JPanel {
         return listPanel;
     }
     
+    public JTextArea getMessageArea() {
+        return messageTextArea;
+    }
+
+    public JButton getSendButton() {
+        return sendButton;
+    }
 }

@@ -1,6 +1,10 @@
 package user.controllers;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 import user.models.*;
 import user.views.*;
@@ -32,5 +36,28 @@ public class UserController {
     public void useChatPage() {
         ChatPage cp = new ChatPage();
         userFrame.setContentPane(cp);
+        JPanel listPanel = cp.getListPanel();
+        for (int i = 0; i < 2; i++) { // TO-DO: Change later with actual data
+            ChatPage.FriendPanel fp = cp.new FriendPanel("Some name", "Online");
+            listPanel.add(fp);
+            fp.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (e.getSource() == fp) {
+                        JOptionPane.showMessageDialog(null, "Clicked success");
+                    }
+                }
+            });
+            fp.getRemoveFriendButton().addActionListener(e -> {
+                JOptionPane.showMessageDialog(null, "None");
+            });
+            fp.getBlockButton().addActionListener(e -> {
+                JOptionPane.showMessageDialog(null, "None");
+            });
+        }
+
+        cp.getSendButton().addActionListener(e -> {
+            JOptionPane.showMessageDialog(null, "Clicked");
+        });;
     }
 }
