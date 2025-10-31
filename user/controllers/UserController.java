@@ -20,44 +20,98 @@ public class UserController {
 
     public void useLoginPage() {
         LoginPage lp = new LoginPage();
-        lp.getLoginButton().addActionListener(e -> {
-            JOptionPane.showMessageDialog(lp, "Đăng nhập thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        lp.addLoginButtonEvent(e -> {
+            useChatPage();
         });
-        lp.getCreateAccButton().addActionListener(e -> {
-            JOptionPane.showMessageDialog(lp, "Đăng nhập thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        lp.addCreateAccButtonEvent(e -> {
+            useSignUpPage();
         });
-        userFrame.setContentPane(lp);
+        lp.addForgetPasswordButtonEvent(e -> {
+            JOptionPane.showMessageDialog(null, "Just some message");
+        });
+
+        updateUserFrame(lp);
     }
 
     public void useSignUpPage() {
-        userFrame.setContentPane(new SignupPage());
+        SignupPage sp = new SignupPage();
+        sp.addCreateAccButtonEvent(e -> {
+            JOptionPane.showMessageDialog(null, "Just some message");
+        });
+        sp.addReturnLoginButtonEvent(e -> {
+            useLoginPage();
+        });
+        updateUserFrame(sp);
     }
 
     public void useChatPage() {
         ChatPage cp = new ChatPage();
-        userFrame.setContentPane(cp);
-        JPanel listPanel = cp.getListPanel();
-        for (int i = 0; i < 2; i++) { // TO-DO: Change later with actual data
-            ChatPage.FriendPanel fp = cp.new FriendPanel("Some name", "Online");
-            listPanel.add(fp);
-            fp.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (e.getSource() == fp) {
-                        JOptionPane.showMessageDialog(null, "Clicked success");
-                    }
-                }
-            });
-            fp.getRemoveFriendButton().addActionListener(e -> {
-                JOptionPane.showMessageDialog(null, "None");
-            });
-            fp.getBlockButton().addActionListener(e -> {
-                JOptionPane.showMessageDialog(null, "None");
-            });
-        }
+        cp.addToListPanel(cp.createFriendPanel("Some friend", "Online"));
 
-        cp.getSendButton().addActionListener(e -> {
-            JOptionPane.showMessageDialog(null, "Clicked");
-        });;
+        cp.addToListPanel(cp.createPersonPanel("Not a friend", "Online"));
+        cp.addToListPanel(cp.createGroupPanel("Just a group"));
+
+        cp.addToChatPanel(cp.createChatLinePanel("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.", true));
+        cp.addToChatPanel(cp.createChatLinePanel("Wow, that's a lot of text.", false));
+        cp.addToChatPanel(cp.createChatLinePanel("I know right", true));
+
+        cp.addSettingButtonEvent(e -> {
+            new UpdateInfoDialog(null , true);
+        });
+
+        cp.addExitButtonEvent(e -> {
+            useLoginPage();
+        });
+
+        cp.addInboxButtonEvent(e -> {
+            cp.clearListPanel();
+            cp.addToListPanel(cp.createFriendRequestPanel("Some stranger"));
+            cp.updateListPanel();
+        });
+
+        cp.addListButtonEvent(e -> {
+            cp.clearListPanel();
+            cp.addToListPanel(cp.createFriendPanel("Some friend", "Online"));
+            cp.updateListPanel();
+        });
+
+        cp.addOnlineButtonEvent(e -> {
+            cp.clearListPanel();
+            cp.updateListPanel();
+        });
+
+        cp.addSendButtonEvent(e -> {
+            String msg = cp.getMessageArea().getText();
+            if (!msg.isEmpty()) {
+                cp.emptyMessage();
+                cp.addToChatPanel(cp.createChatLinePanel(msg, true));
+            }
+        });
+
+        cp.addCreateMsgButtonEvent(e -> {
+            SearchDialog sd = new SearchDialog(userFrame);
+            sd.showSearchDialog();
+            sd.getSearchField().addActionListener(ee -> {
+                sd.hideSearchDialog();
+                sd.clearListPanel();
+                sd.addToListPanel(cp.createSearchResultPanel("Some name"));
+                sd.addToListPanel(cp.createSearchResultPanel("Some name"));
+                sd.updateListPanel();
+                sd.showSearchDialog();
+            });
+        });
+
+        cp.addCreateGroupButtonEvent(e -> {
+            SearchDialog sd = new SearchDialog(userFrame);
+            sd.showSearchDialog();
+        });
+
+        updateUserFrame(cp);
+    }
+
+    private void updateUserFrame(JPanel p) {
+        userFrame.setContentPane(p);
+        userFrame.revalidate();
+        userFrame.repaint();
     }
 }

@@ -10,6 +10,7 @@ public class UserFrame extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(1366, 768);
         this.setResizable(false);
+        this.setLocationRelativeTo(null);
         this.setVisible(true);
     }
 }

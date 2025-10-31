@@ -2,6 +2,7 @@ package user.views;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -17,7 +18,7 @@ import static user.views.Style.*;
 public class LoginPage extends JPanel {
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private JButton loginButton, createAccButton;
+    private JButton loginButton, createAccButton, forgetPasswordButton;
 
     public LoginPage() {
         this.setBackground(new Color(bgColor));
@@ -47,6 +48,7 @@ public class LoginPage extends JPanel {
 
         loginButton = new JButton("Đăng nhập");
         createAccButton = new JButton("Tạo tài khoản mới");
+        forgetPasswordButton = new JButton("Quên mật khẩu?");
 
         GroupLayout mainLayout = new GroupLayout(main);
         main.setLayout(mainLayout);
@@ -60,6 +62,8 @@ public class LoginPage extends JPanel {
                             .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                 .addGroup(GroupLayout.Alignment.TRAILING, mainLayout.createSequentialGroup()
                                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(forgetPasswordButton)
+                                    .addGap(18, 18, 18)
                                     .addComponent(createAccButton)
                                     .addGap(18, 18, 18)
                                     .addComponent(loginButton))
@@ -91,6 +95,7 @@ public class LoginPage extends JPanel {
                     .addComponent(passwordField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(forgetPasswordButton)
                     .addComponent(createAccButton)
                     .addComponent(loginButton))
                 .addContainerGap(470, Short.MAX_VALUE))
@@ -124,13 +129,15 @@ public class LoginPage extends JPanel {
         return passwordField;
     }
 
-    public JButton getLoginButton() {
-        return loginButton;
+    public void addLoginButtonEvent(ActionListener l) {
+        loginButton.addActionListener(l);
     }
 
-    public JButton getCreateAccButton() {
-        return createAccButton;
+    public void addCreateAccButtonEvent(ActionListener l) {
+        createAccButton.addActionListener(l);
     }
 
-    
+    public void addForgetPasswordButtonEvent(ActionListener l) {
+        forgetPasswordButton.addActionListener(l);
+    }
 }

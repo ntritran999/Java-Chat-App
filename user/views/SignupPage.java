@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -78,11 +79,8 @@ public class SignupPage extends JPanel{
         createAccButton = new JButton("Tạo tài khoản");
         returnLoginButton = new JButton("Trở lại đăng nhập");
         
-        JScrollPane addressScrollPane = new JScrollPane();
-        addressField = new JTextArea();
-        addressField.setColumns(20);
-        addressField.setRows(5);
-        addressScrollPane.setViewportView(addressField);
+        addressField = new JTextArea(5, 20);
+        JScrollPane addressScrollPane = new JScrollPane(addressField);
 
         dateOfBirthPicker = new DatePicker();
         
@@ -224,12 +222,12 @@ public class SignupPage extends JPanel{
         return addressField;
     }
 
-    public JButton getCreateAccButton() {
-        return createAccButton;
+    public void addCreateAccButtonEvent(ActionListener l) {
+        createAccButton.addActionListener(l);
     }
 
-    public JButton getReturnLoginButton() {
-        return returnLoginButton;
+    public void addReturnLoginButtonEvent(ActionListener l) {
+        returnLoginButton.addActionListener(l);
     }
 
     public DatePicker getDateOfBirthPicker() {
