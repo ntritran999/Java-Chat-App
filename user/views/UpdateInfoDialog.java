@@ -2,6 +2,8 @@ package user.views;
 
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -13,7 +15,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.WindowConstants;
 
 import com.github.lgooddatepicker.components.DatePicker;
 
@@ -25,10 +26,8 @@ public class UpdateInfoDialog extends JDialog{
     private DatePicker dobPicker;
     private JButton updateButton, resetButton;
 
-    public UpdateInfoDialog(JFrame frame, boolean modal) {
-        super(frame, modal);
-        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        this.setTitle("Cập nhật thông tin tài khoản");
+    public UpdateInfoDialog(JFrame frame) {
+        super(frame, "Cập nhật thông tin tài khoản", true);
 
         JLabel title = new JLabel("Điền thông tin mới");
         title.setFont(new Font("SansSerif", Font.BOLD, 24));
@@ -59,6 +58,9 @@ public class UpdateInfoDialog extends JDialog{
         
         updateButton = new JButton("Cập nhật");
         resetButton = new JButton("Xoá");
+        resetButton.addActionListener(e -> {
+            clearUpdateInfoDialog();
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -146,9 +148,27 @@ public class UpdateInfoDialog extends JDialog{
                 .addContainerGap(59, Short.MAX_VALUE))
         );
 
-        this.pack();
-        this.setLocationRelativeTo(null);
-        this.setVisible(true);
+        pack();
+        setLocationRelativeTo(null);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                clearUpdateInfoDialog();
+            }
+        });
+    }
+
+    public void showUpdateInfoDialog() {
+        setVisible(true);
+    }
+
+    public void clearUpdateInfoDialog() {
+        fullNameField.setText("");
+        addressTextArea.setText("");
+        emailField.setText("");
+        newPasswordField.setText("");
+        confirmPasswordField.setText("");
     }
 
     public JTextField getFullNameField() {
@@ -185,9 +205,5 @@ public class UpdateInfoDialog extends JDialog{
 
     public void addUpdateButtonEvent(ActionListener l) {
         updateButton.addActionListener(l);
-    }
-
-    public void addResetButtonEvent(ActionListener l) {
-        resetButton.addActionListener(l);
     }
 }

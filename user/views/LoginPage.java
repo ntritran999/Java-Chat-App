@@ -21,7 +21,7 @@ public class LoginPage extends JPanel {
     private JButton loginButton, createAccButton, forgetPasswordButton;
 
     public LoginPage() {
-        this.setBackground(new Color(bgColor));
+        setBackground(new Color(bgColor));
 
         JLabel logo = new JLabel("CHAT APP");
         logo.setForeground(Color.black);
@@ -102,7 +102,7 @@ public class LoginPage extends JPanel {
         );
 
         GroupLayout loginLayout = new GroupLayout(this);
-        this.setLayout(loginLayout);
+        setLayout(loginLayout);
         loginLayout.setHorizontalGroup(
             loginLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(loginLayout.createSequentialGroup()

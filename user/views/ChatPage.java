@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -26,10 +27,10 @@ import static user.views.Style.*;
 
 class IconButton extends JButton {
     public IconButton(String iconPath) {
-        this.setIcon(new ImageIcon(getClass().getResource(iconPath)));
-        this.setContentAreaFilled(false);
-        this.setBorder(BorderFactory.createEmptyBorder());
-        this.setPreferredSize(new Dimension(32, 32));
+        setIcon(new ImageIcon(getClass().getResource(iconPath)));
+        setContentAreaFilled(false);
+        setBorder(BorderFactory.createEmptyBorder());
+        setPreferredSize(new Dimension(32, 32));
     }
 }
 
@@ -37,7 +38,7 @@ public class ChatPage extends JPanel {
     public class ChatLinePanel extends JPanel {
         public ChatLinePanel(String text, boolean sender) {
             int align = (sender) ? FlowLayout.TRAILING : FlowLayout.LEADING;
-            this.setLayout(new FlowLayout(align, 10, 0));
+            setLayout(new FlowLayout(align, 10, 0));
 
             JTextArea msg = new JTextArea(text);
             msg.setFont(msg.getFont().deriveFont(16f));
@@ -55,22 +56,23 @@ public class ChatPage extends JPanel {
             msg.setPreferredSize(d);
             msg.setMaximumSize(new Dimension(maxWidth, d.height));
 
-            this.add(msg);
+            add(msg);
         }
     }
 
     public class SearchResultPanel extends JPanel {
         private JLabel fullName;
 
-        public SearchResultPanel(String fullName) {
-            this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-            this.setPreferredSize(new Dimension(250, 30));
-            this.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
-
+        public SearchResultPanel(String fullName, MouseListener l) {
+            addMouseListener(l);
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            setPreferredSize(new Dimension(250, 30));
+            setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+            
             this.fullName = new JLabel(fullName);
             this.fullName.setFont(new Font("SansSerif", Font.BOLD, 16));
 
-            this.add(this.fullName);
+            add(this.fullName);
         }
 
         public JLabel getfullName() {
@@ -82,9 +84,10 @@ public class ChatPage extends JPanel {
         private JButton groupSettingButton;
         private JLabel fullName;
 
-        public GroupPanel(String fullName) {
-            this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-            this.setPreferredSize(new Dimension(300, 50));
+        public GroupPanel(String fullName, MouseListener l) {
+            addMouseListener(l);
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            setPreferredSize(new Dimension(300, 50));
 
             JPanel textPanel = new JPanel();
             textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS));
@@ -94,9 +97,9 @@ public class ChatPage extends JPanel {
 
             groupSettingButton = new IconButton("/assets/icons/more-icon.png");
 
-            this.add(textPanel);
-            this.add(Box.createHorizontalGlue());
-            this.add(groupSettingButton);
+            add(textPanel);
+            add(Box.createHorizontalGlue());
+            add(groupSettingButton);
         }
 
         public JLabel getfullName() {
@@ -112,9 +115,10 @@ public class ChatPage extends JPanel {
         private JButton createMsgButton, reportButton;
         private JLabel fullName, status;
 
-        public PersonPanel(String fullName, String status) {
-            this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-            this.setPreferredSize(new Dimension(300, 50));
+        public PersonPanel(String fullName, String status, MouseListener l) {
+            addMouseListener(l);
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            setPreferredSize(new Dimension(300, 50));
 
             JPanel textPanel = new JPanel();
             textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS));
@@ -127,11 +131,11 @@ public class ChatPage extends JPanel {
             createMsgButton = new IconButton("/assets/icons/add-friend-icon.png");
             reportButton = new IconButton("/assets/icons/spam-icon.png");
 
-            this.add(textPanel);
-            this.add(Box.createHorizontalGlue());
-            this.add(createMsgButton);
-            this.add(Box.createRigidArea(new Dimension(10, 0)));
-            this.add(reportButton);
+            add(textPanel);
+            add(Box.createHorizontalGlue());
+            add(createMsgButton);
+            add(Box.createRigidArea(new Dimension(10, 0)));
+            add(reportButton);
         }
 
         public JLabel getfullName() {
@@ -156,9 +160,10 @@ public class ChatPage extends JPanel {
         private JButton removeFriendButton, blockButton, reportButton;
         private JLabel fullName, status;
 
-        public FriendPanel(String fullName, String status) {
-            this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-            this.setPreferredSize(new Dimension(300, 50));
+        public FriendPanel(String fullName, String status, MouseListener l) {
+            addMouseListener(l);
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            setPreferredSize(new Dimension(300, 50));
 
             JPanel textPanel = new JPanel();
             textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS));
@@ -190,9 +195,9 @@ public class ChatPage extends JPanel {
                         null);
             });
 
-            this.add(textPanel);
-            this.add(Box.createHorizontalGlue());
-            this.add(moreButton);
+            add(textPanel);
+            add(Box.createHorizontalGlue());
+            add(moreButton);
         }
 
         public void addRemoveFriendButtonEvent(ActionListener l) {
@@ -221,8 +226,8 @@ public class ChatPage extends JPanel {
         private JLabel fullName;
 
         public FriendRequestPanel(String fullName) {
-            this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-            this.setPreferredSize(new Dimension(300, 50));
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            setPreferredSize(new Dimension(300, 50));
 
             JPanel textPanel = new JPanel();
             textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS));
@@ -233,11 +238,11 @@ public class ChatPage extends JPanel {
             addButton = new IconButton("/assets/icons/yes-icon.png");
             declineButton = new IconButton("/assets/icons/no-icon.png");
 
-            this.add(textPanel);
-            this.add(Box.createHorizontalGlue());
-            this.add(addButton);
-            this.add(Box.createRigidArea(new Dimension(5, 0)));
-            this.add(declineButton);
+            add(textPanel);
+            add(Box.createHorizontalGlue());
+            add(addButton);
+            add(Box.createRigidArea(new Dimension(5, 0)));
+            add(declineButton);
         }
 
         public void addAddButtonEvent(ActionListener l) {
@@ -260,9 +265,9 @@ public class ChatPage extends JPanel {
     private JPanel listPanel, centerChatPanel, topChatPanel;
 
     public ChatPage() {
-        this.setLayout(new BorderLayout());
-        this.setBackground(new Color(bgColorDark));
-        this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout());
+        setBackground(new Color(bgColorDark));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel sideBar = new JPanel();
         sideBar.setLayout(new BoxLayout(sideBar, BoxLayout.PAGE_AXIS));
@@ -364,29 +369,29 @@ public class ChatPage extends JPanel {
 
         main.add(friendListPanel, BorderLayout.WEST);
         main.add(chatPanel, BorderLayout.CENTER);
-        this.add(sideBar, BorderLayout.WEST);
-        this.add(main, BorderLayout.CENTER);
+        add(sideBar, BorderLayout.WEST);
+        add(main, BorderLayout.CENTER);
 
     }
 
-    public FriendPanel createFriendPanel(String fullName, String status) {
-        return new FriendPanel(fullName, status);
+    public FriendPanel createFriendPanel(String fullName, String status, MouseListener l) {
+        return new FriendPanel(fullName, status, l);
     }
 
     public FriendRequestPanel createFriendRequestPanel(String fullName) {
         return new FriendRequestPanel(fullName);
     }
 
-    public PersonPanel createPersonPanel(String fullName, String status) {
-        return new PersonPanel(fullName, status);
+    public PersonPanel createPersonPanel(String fullName, String status, MouseListener l) {
+        return new PersonPanel(fullName, status, l);
     }
 
-    public GroupPanel createGroupPanel(String fullName) {
-        return new GroupPanel(fullName);
+    public GroupPanel createGroupPanel(String fullName, MouseListener l) {
+        return new GroupPanel(fullName, l);
     }
 
-    public SearchResultPanel createSearchResultPanel(String fullName) {
-        return new SearchResultPanel(fullName);
+    public SearchResultPanel createSearchResultPanel(String fullName, MouseListener l) {
+        return new SearchResultPanel(fullName, l);
     }
 
     public ChatLinePanel createChatLinePanel(String text, boolean sender) {

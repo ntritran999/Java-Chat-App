@@ -33,9 +33,9 @@ public class SignupPage extends JPanel{
     private DatePicker dateOfBirthPicker;
 
     public SignupPage() {
-        this.setLayout(new BorderLayout());
-        this.setBackground(new Color(bgColor));
-        this.setBorder(BorderFactory.createEmptyBorder(100, 100, 100, 100));
+        setLayout(new BorderLayout());
+        setBackground(new Color(bgColor));
+        setBorder(BorderFactory.createEmptyBorder(100, 100, 100, 100));
 
         JPanel main = new JPanel();
         main.setLayout(new BoxLayout(main, BoxLayout.PAGE_AXIS));
@@ -187,7 +187,7 @@ public class SignupPage extends JPanel{
 
         main.add(title);
         main.add(form);
-        this.add(main, BorderLayout.CENTER);
+        add(main, BorderLayout.CENTER);
     }
 
     public JTextField getFullnameField() {
