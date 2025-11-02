@@ -4,6 +4,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.*;
+import com.formdev.flatlaf.FlatLightLaf;
 
 public class AdminDashboard extends JFrame{
     
@@ -19,10 +20,10 @@ public class AdminDashboard extends JFrame{
         setSize(1366, 768);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // center the app
-        setVisible(true);
         setResizable(false); // unable to resize the app
         
         initComponents();
+        setVisible(true);
     }
     
     private void initComponents(){
@@ -38,7 +39,7 @@ public class AdminDashboard extends JFrame{
         add(sidebarPanel, BorderLayout.WEST);
         
         // Content area
-        contentPanel = new UserManagementPanel();
+        contentPanel = new UserManagement();
         add(contentPanel, BorderLayout.CENTER);
     }
     
@@ -140,13 +141,32 @@ public class AdminDashboard extends JFrame{
                 switch (text){
                     case "Quản lý danh sách người dùng":
                         contentPanel.removeAll();
-                        contentPanel.add(new UserManagementPanel()); // Thay thế bằng lớp của bạn
+                        contentPanel.add(new UserManagement()); // Thay thế bằng lớp của bạn
                         break;
                     case "Danh sách đăng nhập":
                         contentPanel.removeAll();
                         contentPanel.add(new LoginHistory());
                         break;
-                    // Thêm các trường hợp khác ở đây
+                    case "Biểu đồ số lượng người hoạt động theo năm":
+                        contentPanel.removeAll();
+                        contentPanel.add(new ActiveUsersChart());
+                        break;
+                    case "Biểu đồ số lượng người đăng ký mới theo năm":
+                        contentPanel.removeAll();
+                        contentPanel.add(new RegisteredUserChart());
+                        break;
+                    case "Danh sách người dùng đăng ký mới":
+                        contentPanel.removeAll();
+                        contentPanel.add(new RegisteredUserList());
+                        break;
+                    case "Danh sách người dùng và số lượng bạn bè":
+                        contentPanel.removeAll();
+                        contentPanel.add(new UsersFriendsList());
+                        break;
+                    case "Danh sách báo cáo spam":
+                        contentPanel.removeAll();
+                        contentPanel.add(new SpamManagement());
+                        break;
                     default:
                         break;
                 }
@@ -159,14 +179,8 @@ public class AdminDashboard extends JFrame{
     
 
 
-    public static void main(String[] args) {
-        // Set system look and feel
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        SwingUtilities.invokeLater(() -> new AdminDashboard());
+    public static void main(String[] args){
+        FlatLightLaf.setup();
+        new AdminDashboard();
     }
 }
