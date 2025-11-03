@@ -141,7 +141,7 @@ public class AdminDashboard extends JFrame{
                 switch (text){
                     case "Quản lý danh sách người dùng":
                         contentPanel.removeAll();
-                        contentPanel.add(new UserManagement()); // Thay thế bằng lớp của bạn
+                        contentPanel.add(new UserManagement()); 
                         break;
                     case "Danh sách đăng nhập":
                         contentPanel.removeAll();
@@ -167,6 +167,9 @@ public class AdminDashboard extends JFrame{
                         contentPanel.removeAll();
                         contentPanel.add(new SpamManagement());
                         break;
+                    case "Danh sách người dùng hoạt động":
+                        contentPanel.removeAll();
+                        contentPanel.add(new ActiveUsersList());
                     default:
                         break;
                 }

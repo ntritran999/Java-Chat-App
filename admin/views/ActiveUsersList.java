@@ -9,32 +9,34 @@ import com.github.lgooddatepicker.components.DatePickerSettings;
 import java.time.LocalDate;
 import java.util.*;
 
-public class SpamManagement extends JPanel{
-    
+public class ActiveUsersList extends JPanel{
     private JTable userTable;
     private DefaultTableModel tableModel;
 
     private JTextField searchField;
     private JComboBox<String> sortCombo;
     private DatePicker startDatePicker;
-    private DatePicker endDatePicker; 
+    private DatePicker endDatePicker;
     private JButton buttonSearchName;
     private JButton buttonFilterDate;
 
-    private ArrayList<JButton> deleteButtons;
+    // filter friend
+    private JComboBox<String> filterOperator;
+    private JTextField actionCountField;
+    private JButton buttonFilter;
+    private JButton buttonClearFilter;
 
-    public SpamManagement(){
+    public ActiveUsersList(){
         setLayout(new BorderLayout(10, 10));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        deleteButtons = new ArrayList<>();
         initComponents();
         loadSampleData();
     }
 
     private void initComponents(){
-        JLabel titleLabel = new JLabel("Danh sách báo cáo spam");
+        JLabel titleLabel = new JLabel("Danh sách người dùng hoạt động");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
@@ -139,141 +141,125 @@ public class SpamManagement extends JPanel{
         row2.add(sortLabel);
         row2.add(sortCombo);
 
+        // row 3
+        JPanel row3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        row3.setBackground(Color.WHITE);
+        row3.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Lọc theo số lượng hoạt động"),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        JLabel filterLabel = new JLabel("Điều kiện:");
+        filterLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        
+        filterOperator = new JComboBox<>(new String[]{
+            "Bằng (=)",
+            "Lớn hơn (>)",
+            "Nhỏ hơn (<)",
+            "Lớn hơn hoặc bằng (≥)",
+            "Nhỏ hơn hoặc bằng (≤)"
+        });
+        filterOperator.setPreferredSize(new Dimension(180, 30));
+        filterOperator.setFont(new Font("Arial", Font.PLAIN, 13));
+
+        actionCountField = new JTextField(10);
+        actionCountField.setPreferredSize(new Dimension(100, 30));
+        actionCountField.setFont(new Font("Arial", Font.PLAIN, 14));
+        actionCountField.setHorizontalAlignment(JTextField.CENTER);
+
+        JLabel actionLabel = new JLabel("hoạt động");
+        actionLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        buttonFilter = new JButton("Áp dụng");
+        buttonFilter.setPreferredSize(new Dimension(110, 30));
+        buttonFilter.setFont(new Font("Arial", Font.PLAIN, 13));
+        buttonFilter.setBackground(new Color(76, 175, 80));
+        buttonFilter.setForeground(Color.WHITE);
+        buttonFilter.setFocusPainted(false);
+        buttonFilter.setBorderPainted(false);
+        buttonFilter.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        buttonClearFilter = new JButton("Xoá lọc");
+        buttonClearFilter.setPreferredSize(new Dimension(110, 30));
+        buttonClearFilter.setFont(new Font("Arial", Font.PLAIN, 13));
+        buttonClearFilter.setBackground(new Color(244, 67, 54));
+        buttonClearFilter.setForeground(Color.WHITE);
+        buttonClearFilter.setFocusPainted(false);
+        buttonClearFilter.setBorderPainted(false);
+        buttonClearFilter.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        row3.add(filterLabel);
+        row3.add(filterOperator);
+        row3.add(actionCountField);
+        row3.add(actionLabel);
+        row3.add(buttonFilter);
+        row3.add(buttonClearFilter);
+
         panel.add(row1);
         panel.add(row2);
+        panel.add(row3);
         return panel;
     }
 
     private JScrollPane createTablePanel(){
         String[] columns = {
-            "ID bị báo cáo", "Họ tên", "ID báo cáo", 
-            "Thời gian", "Trạng thái", "Hành động"
+            "STT", "Tên đăng nhập", "Số lần mở", "Số người chat", "Số nhóm chat"
         };
-        
-        tableModel = new DefaultTableModel(columns, 0) {
+        tableModel = new DefaultTableModel(columns, 0){
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == 5;
+            public boolean isCellEditable(int row, int column){
+                return false;
             }
         };
-        ActionButtonRenderer.setActionButtons(deleteButtons);
+
         userTable = new JTable(tableModel);
         userTable.setFont(new Font("Arial", Font.PLAIN, 13));
-        userTable.setRowHeight(45);
+        userTable.setRowHeight(40);
         userTable.setShowGrid(true);
         userTable.setGridColor(new Color(220, 220, 220));
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         userTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
         userTable.getTableHeader().setBackground(new Color(240, 240, 240));
         userTable.getTableHeader().setPreferredSize(new Dimension(0, 45));
+
+        // Set column width
+        userTable.getColumnModel().getColumn(0).setPreferredWidth(50);   
+        userTable.getColumnModel().getColumn(1).setPreferredWidth(130); 
+        userTable.getColumnModel().getColumn(2).setPreferredWidth(180); 
+        userTable.getColumnModel().getColumn(3).setPreferredWidth(220);  
+        userTable.getColumnModel().getColumn(4).setPreferredWidth(150);  
         
-        userTable.getColumnModel().getColumn(0).setPreferredWidth(120);   
-        userTable.getColumnModel().getColumn(1).setPreferredWidth(150);  
-        userTable.getColumnModel().getColumn(2).setPreferredWidth(120);  
-        userTable.getColumnModel().getColumn(3).setPreferredWidth(150);  
-        userTable.getColumnModel().getColumn(4).setPreferredWidth(120);
-        userTable.getColumnModel().getColumn(5).setPreferredWidth(100);   
-        
+        // Align center number 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        userTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
         userTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
         userTable.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
         userTable.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
         
-        // Set custom renderer and editor for action column
-        userTable.getColumnModel().getColumn(5).setCellRenderer(new ActionButtonRenderer());
-        userTable.getColumnModel().getColumn(5).setCellEditor(new ActionButtonEditor(new JCheckBox()));
         
         JScrollPane scrollPane = new JScrollPane(userTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
+
         return scrollPane;
-    } 
+    }
 
     private void loadSampleData() {
         Object[][] data = {
-            {"user005", "Hoàng Minh Đức", "user023", "25/10/2024 14:30:15", "Chờ xử lý", ""},
-            {"user012", "Lý Thu Lan", "user034", "26/10/2024 09:15:42", "Chờ xử lý", ""},
-            {"user008", "Bùi Lan Hương", "user019", "26/10/2024 16:20:30","Đã khoá", ""},
-            {"user015", "Trần Minh Tuấn", "user041", "27/10/2024 10:45:18", "Chờ xử lý", ""},
-            {"user021", "Nguyễn Thị Mai", "user007", "27/10/2024 13:30:55", "Chờ xử lý", ""},
-            {"user018", "Phạm Văn Hòa", "user052", "27/10/2024 15:15:22",  "Đã khoá", ""},
-            {"user029", "Đỗ Thanh Hương", "user013", "28/10/2024 08:40:10", "Chờ xử lý", ""},
-            {"user033", "Lê Quang Vinh", "user028", "28/10/2024 11:25:45", "Chờ xử lý", ""},
-            {"user025", "Vũ Thị Hoa", "user045", "28/10/2024 14:50:33",  "Đã khoá", ""},
-            {"user037", "Hoàng Văn Sơn", "user016","28/10/2024 16:10:20", "Chờ xử lý", ""}
+            {1, "user001", 120, 15, 5},
+            {2, "user002", 98, 10, 4},
+            {3, "user003", 76, 8, 3},
+            {4, "user004", 142, 18, 6},
+            {5, "user005", 160, 20, 7},
+            {6, "user006", 54, 5, 2},
+            {7, "user007", 115, 12, 5},
+            {8, "user008", 134, 16, 6},
+            {9, "user009", 68, 7, 3},
+            {10, "user010", 150, 19, 6},
+            {11, "user011", 82, 9, 3},
+            {12, "user012", 127, 14, 5}
         };
         
         for (Object[] row : data) {
             tableModel.addRow(row);
-
-            JButton btn = createDeleteButton((String) row[0]);
-            if ("Đã khoá".equalsIgnoreCase((String) row[4])) {
-                btn.setEnabled(false);
-                btn.setBackground(Color.GRAY);
-                btn.setCursor(Cursor.getDefaultCursor());
-            }
-
-            deleteButtons.add(btn);
         }
     }
-    
-    private JButton createDeleteButton(String username) {
-        JButton button = new JButton("Khóa");
-        button.setFont(new Font("Arial", Font.BOLD, 12));
-        button.setBackground(new Color(244, 67, 54));
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        // Thêm sự kiện click
-        button.addActionListener(e -> {
-            Window parentWindow = SwingUtilities.getWindowAncestor(SpamManagement.this);
-            int confirm = JOptionPane.showConfirmDialog(
-                    parentWindow,
-                    "Bạn có chắc chắn muốn khóa tài khoản '" + username + "'?",
-                    "Xác nhận khóa",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE
-            );
-            if (confirm == JOptionPane.YES_OPTION) {
-                BlockUserByUsername(username);
-                JOptionPane.showMessageDialog(
-                        parentWindow,
-                        "Đã khóa tài khoản '" + username + "' thành công!",
-                        "Thành công",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-            }
-        });
-        return button;
-    }
-
-    private void BlockUserByUsername(String username) {
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            Object nameValue = tableModel.getValueAt(i, 0);
-            if (nameValue != null && nameValue.equals(username)) {
-                String status = (String) tableModel.getValueAt(i, 4);
-                if ("Chờ xử lý".equalsIgnoreCase(status)) {
-                    tableModel.setValueAt("Đã khóa", i, 4);
-
-                    JButton btn = deleteButtons.get(i);
-                    btn.setEnabled(false);
-                    btn.setBackground(Color.GRAY);
-                    btn.setCursor(Cursor.getDefaultCursor());
-                }
-                break;
-            }
-        }
-    }    
-    // Getters for Controller
-    public JTable getUserTable() { return userTable; }
-    public DefaultTableModel getTableModel() { return tableModel; }
-    public JTextField getSearchField() { return searchField; }
-    public JComboBox<String> getSortCombo() { return sortCombo; }
-    public DatePicker getStartDatePicker() { return startDatePicker; }
-    public DatePicker getEndDatePicker() { return endDatePicker; }
-    public JButton getButtonSearchName() { return buttonSearchName; }
-    public JButton getButtonFilterDate() { return buttonFilterDate; }
 }
