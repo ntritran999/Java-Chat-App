@@ -192,7 +192,6 @@ public class UserManagement extends JPanel {
         String fullName = userTable.getValueAt(row, 2).toString();
         String email = userTable.getValueAt(row, 6).toString();
         String status = userTable.getValueAt(row, 8).toString();
-        System.out.println(status);
         JDialog dialog = new JDialog(parentWindow, "Chi tiết người dùng", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setSize(520, 250);
         dialog.setLocationRelativeTo(parentWindow);
