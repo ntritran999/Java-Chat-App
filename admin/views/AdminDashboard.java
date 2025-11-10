@@ -18,7 +18,7 @@ public class AdminDashboard extends JFrame{
     public AdminDashboard(){
         setTitle("Admin Dashboard");
         setSize(1366, 768);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null); // center the app
         setResizable(false); // unable to resize the app
         

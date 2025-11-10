@@ -2,9 +2,12 @@ package user.controllers;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JOptionPane;
 
+import admin.views.AdminDashboard;
 import user.models.*;
 import user.views.*;
 
@@ -19,8 +22,22 @@ public class UserController {
 
     public void useLoginPage() {
         LoginPage lp = new LoginPage();
+        boolean isAdmin = true;
+        // boolean isAdmin = false;
         lp.addLoginButtonEvent(e -> {
-            useChatPage();
+            if (isAdmin) {
+                userFrame.setVisible(false);
+                AdminDashboard ad = new AdminDashboard();
+                ad.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        userFrame.setVisible(true);
+                    }
+                });
+            }
+            else {
+                useChatPage();
+            }
         });
         lp.addCreateAccButtonEvent(e -> {
             useSignUpPage();
