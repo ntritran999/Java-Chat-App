@@ -4,6 +4,8 @@ import java.awt.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 
 public class ChatList extends JPanel{
@@ -48,7 +50,7 @@ public class ChatList extends JPanel{
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         panel.setBackground(Color.WHITE);
 
-        JLabel searchLabel = new JLabel("Lọc theo tên đăng nhập");
+        JLabel searchLabel = new JLabel("Lọc theo tên nhóm");
         searchLabel.setFont(new Font("Arial", Font.PLAIN, 14));
 
         searchField = new JTextField(25);
@@ -70,8 +72,8 @@ public class ChatList extends JPanel{
         sortCombo = new JComboBox<>(new String[]{
             "Thời gian (Mới nhất)",
             "Thời gian (Cũ nhất)",
-            "Tên đăng nhập (A-Z)",
-            "Tên đăng nhập (Z-A)"
+            "Tên nhóm (A-Z)",
+            "Tên nhóm (Z-A)"
         });
         sortCombo.setPreferredSize(new Dimension(220, 30));
         sortCombo.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -241,5 +243,39 @@ public class ChatList extends JPanel{
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.addActionListener(listener);
         return button;
+    }
+
+    public void reloadTableModel(ArrayList<HashMap<String, String>> data) {
+        tableModel.setRowCount(0);
+        int i = 1;
+        for(HashMap<String, String> map : data) {
+            Object[] row = {i, map.get("groupName"), map.get("createDate")};
+            tableModel.addRow(row);
+            i++;
+        }
+        tableModel.fireTableDataChanged();
+    }
+    
+    public String getSortType() {
+        int index = sortCombo.getSelectedIndex();
+        if (index == 0)
+            return "create date desc";
+        else if (index == 1)
+            return "create date asc";
+        else if (index == 2)
+            return "group name asc";
+        return "group name desc";
+    }
+    
+    public String getSearchValue() {
+        return searchField.getText();
+    }
+
+    public void addSortEvent(ActionListener l) {
+        sortCombo.addActionListener(l);
+    }
+
+    public void addFilterEvent(ActionListener l) {
+        buttonSearchName.addActionListener(l);
     }
 }

@@ -6,6 +6,9 @@ import java.awt.*;
 import java.awt.event.*;
 import com.formdev.flatlaf.FlatLightLaf;
 
+import admin.controllers.GroupChatController;
+import admin.controllers.LoginHistoryController;
+
 public class AdminDashboard extends JFrame{
     
     private JPanel sidebarPanel;
@@ -145,7 +148,8 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách đăng nhập":
                         contentPanel.removeAll();
-                        contentPanel.add(new LoginHistory());
+                        LoginHistoryController lhController = new LoginHistoryController();
+                        contentPanel.add(lhController.createLoginHistory());
                         break;
                     case "Biểu đồ số lượng người hoạt động theo năm":
                         contentPanel.removeAll();
@@ -173,7 +177,8 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách các nhóm chat":
                         contentPanel.removeAll();
-                        contentPanel.add(new ChatList());
+                        GroupChatController gcController = new GroupChatController();
+                        contentPanel.add(gcController.createChatList());
                         break;
                     default:
                         break;
