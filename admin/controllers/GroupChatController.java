@@ -1,7 +1,6 @@
 package admin.controllers;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -11,13 +10,14 @@ import admin.models.AdminModel;
 import admin.models.GroupChatModel;
 import admin.views.ChatList;
 
-
 public class GroupChatController {
     private GroupChatModel gcModel;
     private ChatList gc;
+    private GroupChatController self;
     public ChatList createChatList() {
         gc = new ChatList();
         gcModel = null;
+        self = this;
         initChatList();
         
         gc.addSortEvent(e -> {
@@ -58,7 +58,7 @@ public class GroupChatController {
             @Override
             protected void done() {
                 try {
-                    gc.reloadTableModel(get());
+                    gc.reloadTableModel(get(), self);
                 } catch (Exception e) {
                     System.out.println(e);
                 }
@@ -87,6 +87,7 @@ public class GroupChatController {
                         gcModel.sortCreateDateDesc();
                         break;
                     default:
+                        System.out.println("Unknown refresh type.");
                         break;
                 }
                 return gcModel.getGroups();
@@ -94,12 +95,23 @@ public class GroupChatController {
             @Override
             protected void done() {
                 try {
-                    gc.reloadTableModel(get());
+                    gc.reloadTableModel(get(), self);
                 } catch (Exception e) {
                     System.out.println(e);
                 }
             }
         }.execute();
+    }
+
+    public ArrayList<HashMap<String, String>> loadGroupMembers(int groupId) {
+        gcModel.fetchGroupMember(groupId, false);
+        return gcModel.getGroupMembers();
+            
+    }
+
+    public ArrayList<HashMap<String, String>> loadGroupAdmins(int groupId) {
+        gcModel.fetchGroupMember(groupId, true);
+        return gcModel.getGroupMembers();       
     }
 }
 

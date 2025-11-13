@@ -8,6 +8,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 
 import admin.controllers.GroupChatController;
 import admin.controllers.LoginHistoryController;
+import admin.controllers.SpamController;
 
 public class AdminDashboard extends JFrame{
     
@@ -169,7 +170,8 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách báo cáo spam":
                         contentPanel.removeAll();
-                        contentPanel.add(new SpamManagement());
+                        SpamController spamController = new SpamController();
+                        contentPanel.add(spamController.createSpamManagement());
                         break;
                     case "Danh sách người dùng hoạt động":
                         contentPanel.removeAll();

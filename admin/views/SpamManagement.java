@@ -1,11 +1,16 @@
 package admin.views;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
+
+import admin.controllers.SpamController;
+
 import java.time.LocalDate;
 import java.util.*;
 
@@ -30,7 +35,6 @@ public class SpamManagement extends JPanel{
 
         deleteButtons = new ArrayList<>();
         initComponents();
-        loadSampleData();
     }
 
     private void initComponents(){
@@ -130,7 +134,7 @@ public class SpamManagement extends JPanel{
             "Tên đăng nhập (A-Z)",
             "Tên đăng nhập (Z-A)"
         });
-        sortCombo.setPreferredSize(new Dimension(220, 30));
+        sortCombo.setPreferredSize(new Dimension(200, 30));
         sortCombo.setFont(new Font("Arial", Font.PLAIN, 13));
 
         row2.add(searchLabel);
@@ -146,7 +150,7 @@ public class SpamManagement extends JPanel{
 
     private JScrollPane createTablePanel(){
         String[] columns = {
-            "ID bị báo cáo", "Họ tên", "ID báo cáo", 
+            "STT", "Người bị báo cáo", "ID gửi báo cáo", 
             "Thời gian", "Trạng thái", "Hành động"
         };
         
@@ -188,37 +192,9 @@ public class SpamManagement extends JPanel{
         JScrollPane scrollPane = new JScrollPane(userTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         return scrollPane;
-    } 
-
-    private void loadSampleData() {
-        Object[][] data = {
-            {"user005", "Hoàng Minh Đức", "user023", "25/10/2024 14:30:15", "Chờ xử lý", ""},
-            {"user012", "Lý Thu Lan", "user034", "26/10/2024 09:15:42", "Chờ xử lý", ""},
-            {"user008", "Bùi Lan Hương", "user019", "26/10/2024 16:20:30","Đã khoá", ""},
-            {"user015", "Trần Minh Tuấn", "user041", "27/10/2024 10:45:18", "Chờ xử lý", ""},
-            {"user021", "Nguyễn Thị Mai", "user007", "27/10/2024 13:30:55", "Chờ xử lý", ""},
-            {"user018", "Phạm Văn Hòa", "user052", "27/10/2024 15:15:22",  "Đã khoá", ""},
-            {"user029", "Đỗ Thanh Hương", "user013", "28/10/2024 08:40:10", "Chờ xử lý", ""},
-            {"user033", "Lê Quang Vinh", "user028", "28/10/2024 11:25:45", "Chờ xử lý", ""},
-            {"user025", "Vũ Thị Hoa", "user045", "28/10/2024 14:50:33",  "Đã khoá", ""},
-            {"user037", "Hoàng Văn Sơn", "user016","28/10/2024 16:10:20", "Chờ xử lý", ""}
-        };
-        
-        for (Object[] row : data) {
-            tableModel.addRow(row);
-
-            JButton btn = createDeleteButton((String) row[0]);
-            if ("Đã khoá".equalsIgnoreCase((String) row[4])) {
-                btn.setEnabled(false);
-                btn.setBackground(Color.GRAY);
-                btn.setCursor(Cursor.getDefaultCursor());
-            }
-
-            deleteButtons.add(btn);
-        }
     }
-    
-    private JButton createDeleteButton(String username) {
+
+    private JButton createDeleteButton(String username, SpamController sc) {
         JButton button = new JButton("Khóa");
         button.setFont(new Font("Arial", Font.BOLD, 12));
         button.setBackground(new Color(244, 67, 54));
@@ -229,6 +205,7 @@ public class SpamManagement extends JPanel{
 
         // Thêm sự kiện click
         button.addActionListener(e -> {
+            userTable.getCellEditor().stopCellEditing();
             Window parentWindow = SwingUtilities.getWindowAncestor(SpamManagement.this);
             int confirm = JOptionPane.showConfirmDialog(
                     parentWindow,
@@ -238,7 +215,7 @@ public class SpamManagement extends JPanel{
                     JOptionPane.WARNING_MESSAGE
             );
             if (confirm == JOptionPane.YES_OPTION) {
-                BlockUserByUsername(username);
+                BlockUserByUsername(username, sc);
                 JOptionPane.showMessageDialog(
                         parentWindow,
                         "Đã khóa tài khoản '" + username + "' thành công!",
@@ -250,9 +227,9 @@ public class SpamManagement extends JPanel{
         return button;
     }
 
-    private void BlockUserByUsername(String username) {
+    private void BlockUserByUsername(String username, SpamController sc) {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            Object nameValue = tableModel.getValueAt(i, 0);
+            Object nameValue = tableModel.getValueAt(i, 1);
             if (nameValue != null && nameValue.equals(username)) {
                 String status = (String) tableModel.getValueAt(i, 4);
                 if ("Chờ xử lý".equalsIgnoreCase(status)) {
@@ -263,6 +240,7 @@ public class SpamManagement extends JPanel{
                     btn.setBackground(Color.GRAY);
                     btn.setCursor(Cursor.getDefaultCursor());
                 }
+                sc.lockSpam(username);
                 break;
             }
         }
@@ -270,10 +248,67 @@ public class SpamManagement extends JPanel{
     // Getters for Controller
     public JTable getUserTable() { return userTable; }
     public DefaultTableModel getTableModel() { return tableModel; }
-    public JTextField getSearchField() { return searchField; }
-    public JComboBox<String> getSortCombo() { return sortCombo; }
-    public DatePicker getStartDatePicker() { return startDatePicker; }
-    public DatePicker getEndDatePicker() { return endDatePicker; }
-    public JButton getButtonSearchName() { return buttonSearchName; }
-    public JButton getButtonFilterDate() { return buttonFilterDate; }
+
+    public String getSortType() {
+        int index = sortCombo.getSelectedIndex();
+        if (index == 0)
+            return "date desc";
+        else if (index == 1)
+            return "date asc";
+        else if (index == 2)
+            return "username asc";
+        return "username desc";
+    }
+
+    public String getUsernameSearch() {
+        return searchField.getText();
+    }
+
+    public java.sql.Date getStartDate() {
+        return java.sql.Date.valueOf(startDatePicker.getDate());
+    }
+
+    public java.sql.Date getEndDate() {
+        return java.sql.Date.valueOf(endDatePicker.getDate());
+    }
+
+    public void reloadTableModel(ArrayList<HashMap<String, String>> data, SpamController sc) {
+        tableModel.setRowCount(0);
+        deleteButtons.clear();
+        int i = 1;
+        String status;
+        for(HashMap<String, String> map : data) {
+            if (Boolean.valueOf(map.get("isLocked"))) {
+                status = "Đã khoá";
+            }
+            else {
+                status = "Chờ xử lý";
+            }
+
+            Object[] row = {i, map.get("username"), map.get("userId"), map.get("reportDate"), status};
+            JButton btn = createDeleteButton(map.get("username"), sc);
+            if ("Đã khoá".equalsIgnoreCase(status)) {
+                btn.setEnabled(false);
+                btn.setBackground(Color.GRAY);
+                btn.setCursor(Cursor.getDefaultCursor());
+            }
+
+            deleteButtons.add(btn);
+            tableModel.addRow(row);
+            i++;
+        }
+        tableModel.fireTableDataChanged();
+    }
+
+    public void addSortEvent(ActionListener l) {
+        sortCombo.addActionListener(l);
+    }
+
+    public void addSearchEvent(ActionListener l) {
+        buttonSearchName.addActionListener(l);
+    }
+
+    public void addDateFilterEvent(ActionListener l) {
+        buttonFilterDate.addActionListener(l);
+    }
 }

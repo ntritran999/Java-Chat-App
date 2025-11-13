@@ -2,6 +2,9 @@ package admin.views;
 import javax.swing.*;
 import java.awt.*;
 import javax.swing.table.DefaultTableModel;
+
+import admin.controllers.GroupChatController;
+
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -25,7 +28,6 @@ public class ChatList extends JPanel{
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         initComponents();
-        //loadSampleData();
     }
 
     private void initComponents(){
@@ -98,24 +100,6 @@ public class ChatList extends JPanel{
             }
         };
 
-        for (int i = 1; i <= 20; i++) {
-            Object[] rowData = {
-                i,
-                "nhóm " + i,
-                String.format("%02d/%02d/2024 %02d:%02d:%02d",
-                    (i % 28) + 1,           // ngày (1–28)
-                    (i % 12) + 1,           // tháng (1–12)
-                    (i * 3) % 24,           // giờ (0–23)
-                    (i * 7) % 60,           // phút (0–59)
-                    (i * 13) % 60           // giây (0–59)
-                ),
-            };
-
-            tableModel.addRow(rowData);
-
-            JButton btn = createActionButton((String) rowData[1], i - 1);
-            functionButtons.add(btn);
-        }
         ActionButtonRenderer.setActionButtons(functionButtons);
         userTable = new JTable(tableModel);
         userTable.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -145,7 +129,7 @@ public class ChatList extends JPanel{
     }
 
     // Hiển thị popup 
-    private void showUserPopup(int row){
+    private void showUserPopup(GroupChatController gcController, int groupId, int row){
         Window parentWindow = SwingUtilities.getWindowAncestor(ChatList.this);
         String chatName = userTable.getValueAt(row, 1).toString();
         String timeCreate = userTable.getValueAt(row, 2).toString();
@@ -167,52 +151,13 @@ public class ChatList extends JPanel{
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
 
         buttonPanel.add(createPopupButton("Danh sách thành viên", new Color(110, 112, 116), e -> {
-            // Tạo dữ liệu bảng giả
-            String[] memberColumns = {"STT", "Tên thành viên", "Trạng thái"};
-            DefaultTableModel memberModel = new DefaultTableModel(memberColumns, 0);
-
-            for (int i = 1; i <= 10; i++) {
-                memberModel.addRow(new Object[]{i, "Thành viên " + i, (i % 2 == 0) ? "Online" : "Offline"});
-            }
-
-            JTable memberTable = new JTable(memberModel);
-            memberTable.setRowHeight(30);
-            JScrollPane scrollPane = new JScrollPane(memberTable);
-
-            // Tạo JDialog mới để hiển thị bảng
-            JDialog dialog1 = new JDialog(
-                SwingUtilities.getWindowAncestor(buttonPanel),
-                "Danh sách thành viên",
-                Dialog.ModalityType.APPLICATION_MODAL
-            );
-            dialog1.getContentPane().add(scrollPane);
-            dialog1.setSize(400, 300);
-            dialog1.setLocationRelativeTo(buttonPanel);
-            dialog1.setVisible(true);
+            ArrayList<HashMap<String, String>> members = gcController.loadGroupMembers(groupId);
+            showMemberList(buttonPanel, members);
         }));
 
         buttonPanel.add(createPopupButton("Danh sách admin", new Color(100, 181, 246), e -> {
-            // Tạo dữ liệu bảng giả
-            String[] memberColumns = {"STT", "Tên admin", "Trạng thái"};
-            DefaultTableModel memberModel = new DefaultTableModel(memberColumns, 0);
-
-            for (int i = 1; i <= 10; i++) {
-                memberModel.addRow(new Object[]{i, "Thành viên " + i, (i % 2 == 0) ? "Online" : "Offline"});
-            }
-
-            JTable memberTable = new JTable(memberModel);
-            memberTable.setRowHeight(30);
-            JScrollPane scrollPane = new JScrollPane(memberTable);
-
-            JDialog dialog1 = new JDialog(
-                SwingUtilities.getWindowAncestor(buttonPanel),
-                "Danh sách thành viên",
-                Dialog.ModalityType.APPLICATION_MODAL
-            );
-            dialog1.getContentPane().add(scrollPane);
-            dialog1.setSize(400, 300);
-            dialog1.setLocationRelativeTo(buttonPanel);
-            dialog1.setVisible(true);
+            ArrayList<HashMap<String, String>> admins = gcController.loadGroupAdmins(groupId);
+            showMemberList(buttonPanel, admins);
         }));
 
         dialog.add(infoPanel, BorderLayout.NORTH);
@@ -220,7 +165,7 @@ public class ChatList extends JPanel{
         dialog.setVisible(true);
     }
 
-    private JButton createActionButton(String username, int rowIndex){
+    private JButton createActionButton(GroupChatController gcController, int groupId, int rowIndex){
         JButton button = new JButton("Khác");
         button.setFont(new Font("Arial", Font.BOLD, 12));
         button.setBackground(new Color(100, 181, 246)); 
@@ -229,7 +174,10 @@ public class ChatList extends JPanel{
         button.setBorderPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        button.addActionListener(e -> showUserPopup(rowIndex));
+        button.addActionListener(e -> {
+            userTable.getCellEditor().stopCellEditing();
+            showUserPopup(gcController, groupId, rowIndex);
+        });
         return button;
     }
 
@@ -245,11 +193,13 @@ public class ChatList extends JPanel{
         return button;
     }
 
-    public void reloadTableModel(ArrayList<HashMap<String, String>> data) {
+    public void reloadTableModel(ArrayList<HashMap<String, String>> data, GroupChatController gcController) {
         tableModel.setRowCount(0);
+        functionButtons.clear();
         int i = 1;
         for(HashMap<String, String> map : data) {
             Object[] row = {i, map.get("groupName"), map.get("createDate")};
+            functionButtons.add(createActionButton(gcController, Integer.valueOf(map.get("groupId")), i - 1));
             tableModel.addRow(row);
             i++;
         }
@@ -277,5 +227,35 @@ public class ChatList extends JPanel{
 
     public void addFilterEvent(ActionListener l) {
         buttonSearchName.addActionListener(l);
+    }
+
+    private void showMemberList(Component parent, ArrayList<HashMap<String, String>> members) {
+        String[] memberColumns = {"STT", "Tên thành viên", "Trạng thái"};
+        DefaultTableModel memberModel = new DefaultTableModel(memberColumns, 0);
+        
+        int i = 1; 
+        for (var map : members) {
+            memberModel.addRow(new Object[]{i, map.get("memberName"), map.get("status")});
+            i++;
+        }
+
+        JTable memberTable = new JTable(memberModel);
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        memberTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        memberTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+        memberTable.setRowHeight(30);
+        JScrollPane scrollPane = new JScrollPane(memberTable);
+
+        // Tạo JDialog mới để hiển thị bảng
+        JDialog dialog = new JDialog(
+            SwingUtilities.getWindowAncestor(parent),
+            "Danh sách thành viên",
+            Dialog.ModalityType.APPLICATION_MODAL
+        );
+        dialog.getContentPane().add(scrollPane);
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(parent);
+        dialog.setVisible(true);
     }
 }
