@@ -6,17 +6,20 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
+
+import java.util.*;
 
 import admin.views.AdminDashboard;
 import user.models.*;
 import user.views.*;
 
 public class UserController {
-    private User user;
+    private UserModel userModel;
     private UserFrame userFrame;
     
-    public UserController(User user, UserFrame userFrame) {
-        this.user = user;
+    public UserController(UserModel userModel, UserFrame userFrame) {
+        this.userModel = userModel;
         this.userFrame = userFrame;
     }
 
@@ -119,8 +122,7 @@ public class UserController {
         });
 
         cp.addOnlineButtonEvent(e -> {
-            cp.clearListPanel();
-            cp.updateListPanel();
+            loadOnlineFriends(cp, username);
         });
 
         cp.addSendButtonEvent(e -> {
@@ -132,22 +134,10 @@ public class UserController {
         });
 
         cp.addCreateMsgButtonEvent(e -> {
-            msgSearchDialog.addToListPanel(cp.createSearchResultPanel("Test", new MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent me) {
-                    JOptionPane.showMessageDialog(null, "Hello");
-                }
-            }));
             msgSearchDialog.showSearchDialog();
         });
 
         cp.addCreateGroupButtonEvent(e -> {
-            groupSearchDialog.addToListPanel(cp.createSearchResultPanel("Test", new MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent me) {
-                    createGroupDialog.showCreateGroupDialog();
-                }
-            }));
             groupSearchDialog.showSearchDialog();
         });
 
@@ -163,10 +153,82 @@ public class UserController {
             chatSuggestDialog.showSuggestDialog();
         });
 
+        msgSearchDialog.getSearchField().addActionListener(e -> {
+            loadSearchResult(cp, msgSearchDialog, username, new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent me) {
+                    JOptionPane.showMessageDialog(null, "Hello");
+                }
+            });
+        });
+
+        groupSearchDialog.getSearchField().addActionListener(e -> {
+            loadSearchResult(cp, groupSearchDialog, username, new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent me) {
+                    createGroupDialog.showCreateGroupDialog();
+                }
+            });
+        });
+
         userFrame.updateUserFrame(cp);
     }
 
     private void openChat() {
         JOptionPane.showMessageDialog(null, "Hello");
+    }
+
+    private void loadOnlineFriends(ChatPage cp, String username) {
+        new SwingWorker<OnlineListModel, Void> () {
+            @Override
+            protected OnlineListModel doInBackground() throws Exception {
+                return new OnlineListModel(userModel.getConn(), username);
+            }
+            @Override
+            protected void done() {
+                try {
+                    cp.clearListPanel();
+                    OnlineListModel olModel = get();
+                    ArrayList<String> list = olModel.getOnlines();
+                    for (String friend : list) {
+                        cp.addToListPanel(cp.createFriendPanel(friend, "Online", new MouseAdapter() {
+                            @Override
+                            public void mousePressed(MouseEvent me) {
+                                openChat();
+                            }
+                        }));
+                    }
+                    cp.updateListPanel();
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+        }.execute();
+    }
+
+    private void loadSearchResult(ChatPage cp, SearchDialog sd, String username, MouseAdapter ma) {
+        String search = sd.getSearchField().getText();
+        if (!search.isEmpty()) {
+            new SwingWorker<PersonSearchModel, Void> () {
+                @Override
+                protected PersonSearchModel doInBackground() throws Exception {
+                    return new PersonSearchModel(userModel.getConn(), search, username);
+                }
+                @Override
+                protected void done() {
+                    try {
+                        PersonSearchModel psModel = get();
+                        ArrayList<String> list = psModel.getResults();
+                        sd.clearListPanel();
+                        for (String friend : list) {
+                            sd.addToListPanel(cp.createSearchResultPanel(friend, ma));
+                        }
+                        sd.updateListPanel();
+                    } catch (Exception e) {
+                        System.out.println(e);
+                    }
+                }
+            }.execute();
+        }
     }
 }
