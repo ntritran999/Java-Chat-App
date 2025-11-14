@@ -233,9 +233,25 @@ public class ChatList extends JPanel{
         String[] memberColumns = {"STT", "Tên thành viên", "Trạng thái"};
         DefaultTableModel memberModel = new DefaultTableModel(memberColumns, 0);
         
-        int i = 1; 
+        int i = 1;
+        String statusFromMap, status;
         for (var map : members) {
-            memberModel.addRow(new Object[]{i, map.get("memberName"), map.get("status")});
+            statusFromMap = map.get("status");
+            switch (statusFromMap) {
+                case "A":
+                    status = "Online";
+                    break;
+                case "I":
+                    status = "Offline";
+                    break;
+                case "L":
+                    status = "Bị khoá tài khoản";
+                    break;
+                default:
+                    status = "";
+                    break;
+            }
+            memberModel.addRow(new Object[]{i, map.get("memberName"), status});
             i++;
         }
 
