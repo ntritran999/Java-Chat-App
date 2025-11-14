@@ -22,8 +22,8 @@ public class UserController {
 
     public void useLoginPage() {
         LoginPage lp = new LoginPage();
-        boolean isAdmin = true;
-        // boolean isAdmin = false;
+        // boolean isAdmin = true;
+        boolean isAdmin = false;
         lp.addLoginButtonEvent(e -> {
             if (isAdmin) {
                 userFrame.setVisible(false);
@@ -36,7 +36,8 @@ public class UserController {
                 });
             }
             else {
-                useChatPage();
+                String username = "alice";
+                useChatPage(username);
             }
         });
         lp.addCreateAccButtonEvent(e -> {
@@ -61,13 +62,14 @@ public class UserController {
         userFrame.updateUserFrame(sp);
     }
 
-    public void useChatPage() {
+    public void useChatPage(String username) {
         ChatPage cp = new ChatPage();
         UpdateInfoDialog updateInfoDialog = userFrame.getUpdateInfoDialog();
         SearchDialog msgSearchDialog = userFrame.getMsgSearchDialog();
         SearchDialog groupSearchDialog = userFrame.getGroupSearchDialog();
         CreateGroupDialog createGroupDialog = userFrame.getCreateGroupDialog();
         GroupSettingDialog groupSettingDialog = userFrame.getGroupSettingDialog();
+        ChatSuggestDialog chatSuggestDialog = userFrame.getChatSuggestDialog();
 
         cp.addToListPanel(cp.createFriendPanel("Some friend", "Online", new MouseAdapter() {
             @Override
@@ -147,6 +149,18 @@ public class UserController {
                 }
             }));
             groupSearchDialog.showSearchDialog();
+        });
+
+        cp.addDeleteAllHistoryEvent(e -> {
+            int op = JOptionPane.showConfirmDialog(null, 
+                                                    "Bạn có muốn xoá tất cả lịch sử chat?",
+                                                    "Xoá lịch sử chat",
+                                                    JOptionPane.YES_NO_OPTION,
+                                                    JOptionPane.WARNING_MESSAGE);
+        });
+
+        cp.addChatSuggestionEvent(e -> {
+            chatSuggestDialog.showSuggestDialog();
         });
 
         userFrame.updateUserFrame(cp);
