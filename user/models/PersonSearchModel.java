@@ -2,11 +2,12 @@ package user.models;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class PersonSearchModel {
     private Connection conn;
     private String input, username;
-    private ArrayList<String> results;
+    private ArrayList<HashMap<String, String>> results;
     public PersonSearchModel(Connection conn, String input, String username) {
         results = new ArrayList<>();
         this.conn = conn;
@@ -19,7 +20,7 @@ public class PersonSearchModel {
         try {
             results.clear();
             String query = """
-                    SELECT account.username, block.user2
+                    SELECT account.username, find_ai.user_id
                     FROM account
                     JOIN account_info AS find_ai ON find_ai.username=account.username
                     LEFT JOIN block ON block.user1=find_ai.user_id
@@ -33,18 +34,22 @@ public class PersonSearchModel {
             ResultSet rs = st.executeQuery();
 
             boolean foundByUsername = false;
-            String name;
+            String name, id;
             while (rs.next()) {
                 if (!foundByUsername) {
                     foundByUsername = true;
                 }
                 name = rs.getString("username");
-                results.add(name);
+                id = rs.getString("user_id");
+                HashMap<String, String> row = new HashMap<>();
+                row.put("name", name);
+                row.put("id", id);
+                results.add(row);
             }
 
             if (!foundByUsername) {
                 query = """
-                        SELECT user_info.fullname
+                        SELECT user_info.fullname, user_info.id
                         FROM user_info
                         JOIN account_info AS find_ai ON find_ai.user_id=user_info.id
                         LEFT JOIN block ON block.user1=find_ai.user_id
@@ -59,7 +64,11 @@ public class PersonSearchModel {
 
                 while (rs.next()) {
                     name = rs.getString("fullname");
-                    results.add(name);
+                    id = rs.getString("id");
+                    HashMap<String, String> row = new HashMap<>();
+                    row.put("name", name);
+                    row.put("id", id);
+                    results.add(row);
                 }
             }
 
@@ -71,7 +80,7 @@ public class PersonSearchModel {
         }
     }
     
-    public ArrayList<String> getResults() {
+    public ArrayList<HashMap<String, String>> getResults() {
         return results;
     } 
 }

@@ -1,11 +1,13 @@
 package user.controllers;
 
+import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import java.util.*;
@@ -73,6 +75,7 @@ public class UserController {
         CreateGroupDialog createGroupDialog = userFrame.getCreateGroupDialog();
         GroupSettingDialog groupSettingDialog = userFrame.getGroupSettingDialog();
         ChatSuggestDialog chatSuggestDialog = userFrame.getChatSuggestDialog();
+        SearchDialog addFriendSearchDialog = userFrame.getAddFriendSearchDialog();
 
         cp.addToListPanel(cp.createFriendPanel("Some friend", "Online", new MouseAdapter() {
             @Override
@@ -171,6 +174,23 @@ public class UserController {
             });
         });
 
+        cp.addMsgListButonEvent(e -> {
+            loadMsgList();
+        });
+
+        cp.addAddFriendButtonEvent(e -> {
+            addFriendSearchDialog.showSearchDialog();
+        });
+        
+        addFriendSearchDialog.getSearchField().addActionListener(e -> {
+            loadAddFriendSearchResult(cp, addFriendSearchDialog, username, new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent me) {
+                    
+                }
+            });
+        });
+
         userFrame.updateUserFrame(cp);
     }
 
@@ -189,14 +209,25 @@ public class UserController {
                 try {
                     cp.clearListPanel();
                     OnlineListModel olModel = get();
-                    ArrayList<String> list = olModel.getOnlines();
-                    for (String friend : list) {
-                        cp.addToListPanel(cp.createFriendPanel(friend, "Online", new MouseAdapter() {
+                    ArrayList<HashMap<String, String>> list = olModel.getOnlines();
+                    for (var map : list) {
+                        ChatPage.FriendPanel fp = cp.createFriendPanel(map.get("fullname"), "Online", new MouseAdapter() {
                             @Override
                             public void mousePressed(MouseEvent me) {
                                 openChat();
                             }
-                        }));
+                        });
+                        fp.addReportButtonEvent(ev -> {
+                            SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
+                            new SwingWorker<Void, Void>() {
+                                @Override
+                                protected Void doInBackground() {
+                                    SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
+                                    return null;
+                                }
+                            }.execute();
+                        });
+                        cp.addToListPanel(fp);
                     }
                     cp.updateListPanel();
                 } catch (Exception e) {
@@ -218,10 +249,10 @@ public class UserController {
                 protected void done() {
                     try {
                         PersonSearchModel psModel = get();
-                        ArrayList<String> list = psModel.getResults();
+                        ArrayList<HashMap<String, String>> list = psModel.getResults();
                         sd.clearListPanel();
-                        for (String friend : list) {
-                            sd.addToListPanel(cp.createSearchResultPanel(friend, ma));
+                        for (var map : list) {
+                            sd.addToListPanel(cp.createSearchResultPanel(map.get("name"), ma));
                         }
                         sd.updateListPanel();
                     } catch (Exception e) {
@@ -230,5 +261,13 @@ public class UserController {
                 }
             }.execute();
         }
+    }
+
+    private void loadMsgList() {
+        System.out.println("Load cac doan hoi thoai");
+    }
+
+    private void loadAddFriendSearchResult(ChatPage cp, SearchDialog sd, String username, MouseAdapter ma) {
+        System.out.println("Results: ...");
     }
 }

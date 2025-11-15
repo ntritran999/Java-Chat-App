@@ -280,7 +280,7 @@ public class ChatPage extends JPanel {
     private JTextField searchField, chatSearchField;
     private JTextArea messageTextArea;
     private IconButton settingButton, exitButton, inboxButton, listButton, onlineButton, createMsgButton, createGroupButton,
-            sendButton, deleteAllHistoryButton, chatSuggestionButtton;
+            sendButton, deleteAllHistoryButton, chatSuggestionButtton, msgListButton, addFriendButton;
     private JButton findButton, findAllButton;
     private JPanel listPanel, centerChatPanel, topChatPanel;
 
@@ -297,6 +297,10 @@ public class ChatPage extends JPanel {
         logo.setIcon(new ImageIcon(getClass().getResource("/assets/icons/logo-icon.png")));
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
         logo.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
+        msgListButton = new IconButton("/assets/icons/msg-list-icon.png");
+        msgListButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        msgListButton.setPreferredSize(new Dimension(40, 40));
 
         onlineButton = new IconButton("/assets/icons/online-icon.png");
         onlineButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -320,6 +324,8 @@ public class ChatPage extends JPanel {
 
         sideBar.add(logo);
         sideBar.add(Box.createVerticalGlue());
+        sideBar.add(msgListButton);
+        sideBar.add(Box.createRigidArea(new Dimension(0, 10)));
         sideBar.add(onlineButton);
         sideBar.add(Box.createRigidArea(new Dimension(0, 10)));
         sideBar.add(listButton);
@@ -341,12 +347,44 @@ public class ChatPage extends JPanel {
         JPanel searchBar = new JPanel();
         searchBar.setLayout(new FlowLayout(FlowLayout.TRAILING, 10, 10));
         searchField = new JTextField("Tìm Kiếm");
-        searchField.setPreferredSize(new Dimension(200, 30));
+        searchField.setPreferredSize(new Dimension(150, 30));
+        searchField.addActionListener(e -> {
+            String filterName = searchField.getText().toLowerCase();
+            for (Component c : listPanel.getComponents()) {
+                if (c instanceof FriendPanel) {
+                    FriendPanel fp = (FriendPanel)c;
+                    if (!fp.getfullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+                else if (c instanceof PersonPanel) {
+                    PersonPanel pp = (PersonPanel)c;
+                    if (!pp.getfullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+                else if (c instanceof GroupPanel) {
+                    GroupPanel gp = (GroupPanel)c;
+                    if (!gp.getfullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+                else if (c instanceof FriendRequestPanel) {
+                    FriendRequestPanel frp = (FriendRequestPanel)c;
+                    if (!frp.getFullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+            }
+            updateListPanel();
+        });
         createMsgButton = new IconButton("/assets/icons/new-msg-icon.png");
         createGroupButton = new IconButton("/assets/icons/add-group-icon.png");
+        addFriendButton = new IconButton("/assets/icons/add-friend-icon.png");
 
         searchBar.add(searchField);
-        searchBar.add(Box.createRigidArea(new Dimension(20, 0)));
+        searchBar.add(Box.createRigidArea(new Dimension(5, 0)));
+        searchBar.add(addFriendButton);
         searchBar.add(createMsgButton);
         searchBar.add(createGroupButton);
 
@@ -436,14 +474,6 @@ public class ChatPage extends JPanel {
         return new ChatLinePanel(text, sender);
     }
 
-    public JTextField getSearchField() {
-        return searchField;
-    }
-
-    public JPanel getListPanel() {
-        return listPanel;
-    }
-
     public JTextArea getMessageArea() {
         return messageTextArea;
     }
@@ -498,6 +528,14 @@ public class ChatPage extends JPanel {
 
     public void addChatSuggestionEvent(ActionListener l) {
         chatSuggestionButtton.addActionListener(l);
+    }
+
+    public void addMsgListButonEvent(ActionListener l) {
+        msgListButton.addActionListener(l);
+    }
+
+    public void addAddFriendButtonEvent(ActionListener l) {
+        addFriendButton.addActionListener(l);
     }
 
     public JPanel getCenterChatPanel() {
