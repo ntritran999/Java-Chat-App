@@ -19,14 +19,16 @@ public class OnlineListModel {
         try {
             onlines.clear();
             String query = """
-                    SELECT user_info.fullname,user_info.id
-                    FROM account AS acc1 
-                    JOIN account_info AS acc_info1 ON acc1.username=acc_info1.username
-                    JOIN friend ON acc_info1.user_id=friend.user1
-                    JOIN account_info AS acc_info2 ON friend.user2=acc_info2.user_id
-                    JOIN account AS acc2 ON acc_info2.username=acc2.username
-                    JOIN user_info ON acc_info2.user_id=user_info.id
-                    WHERE acc1.username=? and acc2.status='A'
+                    SELECT fullname,user_info.id
+                    FROM account_info acc1
+                    JOIN friend f ON (acc1.user_id=f.user1 OR acc1.user_id=f.user2)
+                    JOIN account_info acc2 ON acc2.user_id=(CASE 
+                                                                WHEN acc1.user_id=f.user1 THEN f.user2
+                                                                ELSE f.user1
+                                                                END)
+                    JOIN account ON acc2.username=account.username
+                    JOIN user_info ON acc2.user_id=user_info.id
+                    WHERE acc1.username=? and account.status='A'
                     """;
             PreparedStatement st = conn.prepareStatement(query);
             st.setString(1, username);

@@ -22,9 +22,9 @@ public class PersonSearchModel {
             String query = """
                     SELECT account.username, find_ai.user_id
                     FROM account
-                    JOIN account_info AS find_ai ON find_ai.username=account.username
+                    JOIN account_info find_ai ON find_ai.username=account.username
                     LEFT JOIN block ON block.user1=find_ai.user_id
-                    JOIN account_info AS cur_ai ON cur_ai.username=?
+                    JOIN account_info cur_ai ON cur_ai.username=?
                     WHERE account.username!=? AND account.username ILIKE ? AND (block.user2 IS NULL OR cur_ai.user_id!=block.user2)
                     """;
             PreparedStatement st = conn.prepareStatement(query);
@@ -51,9 +51,9 @@ public class PersonSearchModel {
                 query = """
                         SELECT user_info.fullname, user_info.id
                         FROM user_info
-                        JOIN account_info AS find_ai ON find_ai.user_id=user_info.id
+                        JOIN account_info find_ai ON find_ai.user_id=user_info.id
                         LEFT JOIN block ON block.user1=find_ai.user_id
-                        JOIN account_info AS cur_ai ON cur_ai.username=?
+                        JOIN account_info cur_ai ON cur_ai.username=?
                         WHERE find_ai.username!=? AND user_info.fullname ILIKE ? AND (block.user2 IS NULL OR cur_ai.user_id!=block.user2)
                         """;
                 st = conn.prepareStatement(query);
