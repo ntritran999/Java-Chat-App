@@ -11,6 +11,7 @@ public class UserFrame extends JFrame {
     private CreateGroupDialog createGroupDialog;
     private GroupSettingDialog groupSettingDialog;
     private ChatSuggestDialog chatSuggestDialog;
+    private SearchDialog addFriendSearchDialog;
     public UserFrame() {
         FlatLightLaf.setup();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -26,6 +27,7 @@ public class UserFrame extends JFrame {
         createGroupDialog = new CreateGroupDialog(this);
         groupSettingDialog = new GroupSettingDialog(this);
         chatSuggestDialog = new ChatSuggestDialog(this);
+        addFriendSearchDialog = new SearchDialog(this);
     }
 
     public void updateUserFrame(JPanel p) {
@@ -56,5 +58,9 @@ public class UserFrame extends JFrame {
 
     public ChatSuggestDialog getChatSuggestDialog() {
         return chatSuggestDialog;
+    }
+
+    public SearchDialog getAddFriendSearchDialog() {
+        return addFriendSearchDialog;
     }
 }
