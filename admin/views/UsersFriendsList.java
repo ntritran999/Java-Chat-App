@@ -26,7 +26,7 @@ public class UsersFriendsList extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
         initComponents();
-        loadSampleData(); // nhớ xóa
+        //loadSampleData(); // nhớ xóa
     }
     
     private void initComponents() {
@@ -155,7 +155,7 @@ public class UsersFriendsList extends JPanel {
     
     private JScrollPane createTablePanel() {
         String[] columns = {
-            "STT", "Tên đăng nhập", "Họ tên", "Email", 
+            "ID", "Tên đăng nhập", "Họ tên", "Email", 
             "Ngày tạo", "Bạn bè trực tiếp", "Bạn của bạn"
         };
         
@@ -218,5 +218,40 @@ public class UsersFriendsList extends JPanel {
             tableModel.addRow(row);
         }
     }
+
+    public JTextField getSearchNameField(){
+        return searchNameField;
+    }
+
+    public JButton getBtnSearch(){
+        return btnSearch;
+    }
     
+    public JComboBox<String> getSortCombo(){
+        return sortCombo;
+    }
+
+      public JComboBox<String> getFilterOperator(){
+        return filterOperator;
+    }
+    
+    public JTextField getFriendsCountField(){
+        return friendsCountField;
+    }
+    
+    public JButton getBtnFilter(){
+        return btnFilter;
+    }
+    
+    public JButton getBtnClearFilter(){
+        return btnClearFilter;
+    }
+
+    public JTable getUserTable(){
+        return userTable;
+    }  
+    
+    public DefaultTableModel getTableModel(){
+        return tableModel;
+    } 
 }

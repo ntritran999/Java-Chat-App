@@ -1,20 +1,16 @@
 package admin.views;
+
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.*;
 import com.formdev.flatlaf.FlatLightLaf;
 
+import admin.controllers.UsersFriendsListController;
+
 public class AdminDashboard extends JFrame{
     
     private JPanel sidebarPanel;
-    private JPanel contentPanel;
-
-    private JTable loginTable;
-    private DefaultTableModel tableModel;
-    private JTextField searchField;
-    
+    private JPanel contentPanel;    
     public AdminDashboard(){
         setTitle("Admin Dashboard");
         setSize(1366, 768);
@@ -161,7 +157,9 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách người dùng và số lượng bạn bè":
                         contentPanel.removeAll();
-                        contentPanel.add(new UsersFriendsList());
+                        UsersFriendsList viewUsersFriendsList = new UsersFriendsList();
+                        new UsersFriendsListController(viewUsersFriendsList);
+                        contentPanel.add(viewUsersFriendsList);
                         break;
                     case "Danh sách báo cáo spam":
                         contentPanel.removeAll();
