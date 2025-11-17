@@ -6,9 +6,6 @@ import java.awt.event.*;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import admin.controllers.*;
-import admin.controllers.GroupChatController;
-import admin.controllers.LoginHistoryController;
-import admin.controllers.SpamController;
 
 public class AdminDashboard extends JFrame{
     
@@ -197,7 +194,7 @@ public class AdminDashboard extends JFrame{
         return button;
     }
     
-    public void showUsersFriendsList(String username) {
+    public void showUsersFriendsList(String username, UsersFriendsList view) {
         for(JButton btn : menuButtons){
             btn.setBackground(new Color(245, 245, 245));
         }
@@ -209,18 +206,27 @@ public class AdminDashboard extends JFrame{
             }
         }
         contentPanel.removeAll();
-        UsersFriendsList view = new UsersFriendsList();
-        UsersFriendsListController controller = new UsersFriendsListController(view);
-
-        if(username != null && !username.trim().isEmpty())
-            controller.queryListFriend(username);
-        
         contentPanel.add(view);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
 
+    public void showHistoryList(String id, LoginHistoryController controller) {
+        for(JButton btn : menuButtons){
+            btn.setBackground(new Color(245, 245, 245));
+        }
 
+        for(JButton btn : menuButtons){
+            if (btn.getText().equals("Danh sách đăng nhập")) {
+                btn.setBackground(new Color(32, 198, 198));
+                break;
+            }
+        }
+        contentPanel.removeAll();        
+        contentPanel.add(controller.createLoginHistoryId(id));
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
 
     public static void main(String[] args){
         FlatLightLaf.setup();

@@ -6,9 +6,9 @@ import java.util.HashMap;
 
 import javax.swing.SwingWorker;
 
-import admin.models.AdminModel;
 import admin.models.GroupChatModel;
 import admin.views.ChatList;
+import admin.models.dbConnection;
 
 public class GroupChatController {
     private GroupChatModel gcModel;
@@ -33,7 +33,7 @@ public class GroupChatController {
         new SwingWorker<GroupChatModel, Void> () {
             @Override
             protected GroupChatModel doInBackground() throws Exception {
-                Connection conn = AdminModel.createConnection(); // TODO: Thay cai AdminModel nay` bang cai class connect toi db
+                Connection conn = dbConnection.getConnection(); 
                 return new GroupChatModel(conn);
             }
             @Override

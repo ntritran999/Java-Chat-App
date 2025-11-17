@@ -7,8 +7,8 @@ import java.util.HashMap;
 
 import javax.swing.SwingWorker;
 
-import admin.models.AdminModel;
 import admin.models.SpamModel;
+import admin.models.dbConnection;
 import admin.views.SpamManagement;
 
 public class SpamController {
@@ -38,7 +38,7 @@ public class SpamController {
         new SwingWorker<SpamModel, Void> () {
             @Override
             protected SpamModel doInBackground() throws Exception {
-                Connection conn = AdminModel.createConnection(); // TODO: Thay cai AdminModel nay` bang cai class connect toi db
+                Connection conn = dbConnection.getConnection(); 
                 return new SpamModel(conn);
             }
             @Override

@@ -338,6 +338,7 @@ public class UserManagementModel{
     }
 
     private static long findingIdByUserName(String username) throws SQLException{
+        System.out.println(2);
         if(username == null || username.trim().isEmpty())
             return -1;
         PreparedStatement st = null;
@@ -348,44 +349,49 @@ public class UserManagementModel{
         if(rs.next()){
             return rs.getLong(1) ;
         }
+        System.out.println(-2);
         return -1;
     }
 
     public static boolean addUserAccount(String username, String password, String fullname, String email, String dob, String role) throws SQLException{
-        // if(isUsernameExists(username))
-        //     return false;
-        // // hash password
-        // String hashPassword = get_SHA_256_SecurePassword(password);
-        // PreparedStatement st = null;
-        // StringBuilder sql = new StringBuilder();
-        // sql.append( """
-        //             insert into account (username, password, role, email) 
-        //             values (?, ?, ?, ?);
-        //         """);
+        if(isUsernameExists(username))
+            return false;
+        // hash password
+        String hashPassword = get_SHA_256_SecurePassword(password);
+        PreparedStatement st = null;
+        StringBuilder sql = new StringBuilder();
+        sql.append( """
+                    insert into account (username, password, role, email) 
+                    values (?, ?, ?, ?);
+                """);
 
-        // if(role == "U"){
-        //     sql.append("""
-        //                 insert into account_info (username)
-        //                 values (?);
+        if(role.equals("U")){
+            sql.append("""
+                        insert into account_info (username)
+                        values (?);
+                    """);
+        }
+        st = conn.prepareStatement(sql.toString());
+        int paramIndex = 1;
+        st.setString(paramIndex++, username);
+        st.setString(paramIndex++, hashPassword);
+        st.setString(paramIndex++, role);
+        st.setString(paramIndex++, email);
+        if(role.equals("U")){
+            st.setString(paramIndex++, username);
+        }
+        st.executeUpdate();
 
-        //                 insert into user_info (id, fullname, dob)
-        //                 values (?, ?, ?);
-        //             """);
-        // }
-        // st = conn.prepareStatement(sql.toString());
-        // int paramIndex = 1;
-        // st.setString(paramIndex++, username);
-        // st.setString(paramIndex++, hashPassword);
-        // st.setString(paramIndex++, role);
-        // st.setString(paramIndex++, email);
-        // if(role == "U"){
-        //     st.setString(paramIndex++, username);
-        //     st.setLong(paramIndex++, findingIdByUserName(username));
-        //     st.setString(paramIndex++, fullname);
-        //     st.setDate(paramIndex++, Date.valueOf(dob));
-        // }
-        // st.executeUpdate();
-        // System.out.println("bye");
+        // query 2
+        if(role.equals("U")){
+            String sql2 = "insert into user_info (id, fullname, dob) values (?, ?, ?)";
+            st = conn.prepareStatement(sql2);
+            paramIndex = 1;
+            st.setLong(paramIndex++, findingIdByUserName(username));
+            st.setString(paramIndex++, fullname);
+            st.setDate(paramIndex++, Date.valueOf(dob));
+            st.execute();
+        }
         return true;
     }
 }

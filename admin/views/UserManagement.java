@@ -381,8 +381,9 @@ public class UserManagement extends JPanel{
             umController.handleShowFriendsList(username, dialog);
         }));
 
-        buttonPanel.add(createPopupButton("Lịch sử đăng nhập", new Color(255, 152, 0), e ->
-                JOptionPane.showMessageDialog(dialog, "Xem lịch sử đăng nhập của " + username)));
+        buttonPanel.add(createPopupButton("Lịch sử đăng nhập", new Color(255, 152, 0), e ->{
+            umController.handleShowLoginHistory(id, username, dialog);
+        }));
 
         dialog.add(infoPanel, BorderLayout.NORTH);
         dialog.add(passwordPanel, BorderLayout.CENTER);

@@ -1,6 +1,7 @@
 package admin.controllers;
 import admin.models.UserManagementModel;
 import admin.views.AdminDashboard;
+import admin.views.LoginHistory;
 import admin.views.UserManagement;
 import admin.views.UsersFriendsList;
 
@@ -269,7 +270,7 @@ public class UserManagementController{
                     else{
                         System.out.println("success");
                         dialog.dispose();
-                        dashBoard.showUsersFriendsList(username);
+                        dashBoard.showUsersFriendsList(username, viewUsersFriendsList);
                     }
                 } catch (Exception e){
                     e.printStackTrace();
@@ -279,7 +280,40 @@ public class UserManagementController{
         };
         worker.execute();
     }
-    public void handleShowLoginHistory(String username, JDialog dialog) { }
+    public void handleShowLoginHistory(String id, String username, JDialog dialog) { 
+        LoginHistoryController historyController = new LoginHistoryController();
+        historyController.initLoginHistoryId(id);
+        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean,Void>() {
+            @Override
+            protected Boolean doInBackground() {
+                while (historyController.getHistoryModel() == null) {
+                    try {
+                        Thread.sleep(100); // doi cho tao model truoc
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return historyController.queryHistoryById(id);
+            }
+
+            @Override
+            protected void done(){
+                try {
+                    boolean success = get();
+                    if(!success)
+                        JOptionPane.showMessageDialog(dialog, "Không thành công hiển thị đăng nhập của " + username);
+                    else{
+                        System.out.println("success");
+                        dialog.dispose();
+                        dashBoard.showHistoryList(id, historyController);
+                    }
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        };
+        worker.execute();
+    }
 
     public void handleUpdateInfoUser(String id, String fullName, String address, String email, JDialog dialog){
         SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean,Void>() {

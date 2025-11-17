@@ -43,6 +43,42 @@ public class LoginHistoryModel {
             System.out.println(e);
         }
     }
+
+    public void loadHistoryById(String id){
+        try {
+            history.clear();
+            PreparedStatement st = null;
+            String query = """
+                    SELECT account_info.username, user_info.fullname, activities.last_login_date
+                    FROM activities JOIN user_info ON activities.user_id=user_info.id
+                                    JOIN account_info ON account_info.user_id=user_info.id
+                    where activities.user_id = (?)
+                    ORDER BY activities.last_login_date DESC;
+                    """;
+            st = conn.prepareStatement(query);
+            if(id != null && !id.trim().isEmpty())
+                st.setLong(1, Long.parseLong(id));
+            ResultSet rs = st.executeQuery();
+            String username, fullname;
+            Date date;
+            while (rs.next()) {
+                username = rs.getString("username");
+                fullname = rs.getString("fullname");
+                date = rs.getDate("last_login_date");
+
+                HashMap<String, String> row = new HashMap<>();
+                row.put("username", username);
+                row.put("fullname", fullname);
+                row.put("loginDate", date.toString());
+                history.add(row);
+            }
+            rs.close();
+            st.close();
+            
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+    }
     
     public ArrayList<HashMap<String, String>> getHistory() {
         return history;
