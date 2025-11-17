@@ -3,7 +3,7 @@ import java.sql.SQLException;
 import javax.swing.SwingUtilities;
 
 import user.controllers.UserController;
-import user.models.User;
+import user.models.UserModel;
 import user.views.UserFrame;
 import admin.models.dbConnection;
 
@@ -12,7 +12,7 @@ public class Main {
         dbConnection.createConDB();
         System.setProperty("sun.java2d.uiScale", "1.5");
         SwingUtilities.invokeLater(() -> {
-            UserController uc = new UserController(new User(), new UserFrame());
+            UserController uc = new UserController(new UserModel(), new UserFrame());
             uc.useLoginPage();
         });
     }

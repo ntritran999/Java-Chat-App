@@ -6,6 +6,9 @@ import java.awt.event.*;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import admin.controllers.*;
+import admin.controllers.GroupChatController;
+import admin.controllers.LoginHistoryController;
+import admin.controllers.SpamController;
 
 public class AdminDashboard extends JFrame{
     
@@ -149,7 +152,8 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách đăng nhập":
                         contentPanel.removeAll();
-                        contentPanel.add(new LoginHistory());
+                        LoginHistoryController lhController = new LoginHistoryController();
+                        contentPanel.add(lhController.createLoginHistory());
                         break;
                     case "Biểu đồ số lượng người hoạt động theo năm":
                         contentPanel.removeAll();
@@ -171,7 +175,8 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách báo cáo spam":
                         contentPanel.removeAll();
-                        contentPanel.add(new SpamManagement());
+                        SpamController spamController = new SpamController();
+                        contentPanel.add(spamController.createSpamManagement());
                         break;
                     case "Danh sách người dùng hoạt động":
                         contentPanel.removeAll();
@@ -179,7 +184,8 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách các nhóm chat":
                         contentPanel.removeAll();
-                        contentPanel.add(new ChatList());
+                        GroupChatController gcController = new GroupChatController();
+                        contentPanel.add(gcController.createChatList());
                         break;
                     default:
                         break;

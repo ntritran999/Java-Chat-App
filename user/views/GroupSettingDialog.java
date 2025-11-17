@@ -95,4 +95,20 @@ public class GroupSettingDialog extends JDialog {
     public void addRemoveMemEvent(ActionListener l) {
         removeMemberButton.addActionListener(l);
     }
+
+    public String getNewGroupName() {
+        return groupNameField.getText();
+    }
+
+    public String getMemberToAdd() {
+        return addMemberField.getText();
+    }
+
+    public String getAdminToAdd() {
+        return addAdminField.getText();
+    }
+
+    public String getMemberToRemove() {
+        return removeMemberField.getText();
+    }
 }

@@ -7,6 +7,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.Box;
@@ -21,6 +23,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 
 import static user.views.Style.*;
@@ -57,6 +60,22 @@ public class ChatPage extends JPanel {
             msg.setMaximumSize(new Dimension(maxWidth, d.height));
 
             add(msg);
+            msg.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent me) {
+                    if (SwingUtilities.isRightMouseButton(me)) {
+                        Object[] options = { "Có", "Không" };
+                        JOptionPane.showOptionDialog(null, 
+                                                "Bạn có muốn xoá đoạn chat này không?", 
+                                                "Xoá chat",
+                                                JOptionPane.YES_NO_OPTION,
+                                                JOptionPane.WARNING_MESSAGE,
+                                                null,
+                                                options,
+                                                options[0]);
+                    }
+                }
+            });
         }
     }
 
@@ -261,7 +280,8 @@ public class ChatPage extends JPanel {
     private JTextField searchField, chatSearchField;
     private JTextArea messageTextArea;
     private IconButton settingButton, exitButton, inboxButton, listButton, onlineButton, createMsgButton, createGroupButton,
-            sendButton, findButton;
+            sendButton, deleteAllHistoryButton, chatSuggestionButtton, msgListButton, addFriendButton;
+    private JButton findButton, findAllButton;
     private JPanel listPanel, centerChatPanel, topChatPanel;
 
     public ChatPage() {
@@ -277,6 +297,10 @@ public class ChatPage extends JPanel {
         logo.setIcon(new ImageIcon(getClass().getResource("/assets/icons/logo-icon.png")));
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
         logo.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
+        msgListButton = new IconButton("/assets/icons/msg-list-icon.png");
+        msgListButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        msgListButton.setPreferredSize(new Dimension(40, 40));
 
         onlineButton = new IconButton("/assets/icons/online-icon.png");
         onlineButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -300,6 +324,8 @@ public class ChatPage extends JPanel {
 
         sideBar.add(logo);
         sideBar.add(Box.createVerticalGlue());
+        sideBar.add(msgListButton);
+        sideBar.add(Box.createRigidArea(new Dimension(0, 10)));
         sideBar.add(onlineButton);
         sideBar.add(Box.createRigidArea(new Dimension(0, 10)));
         sideBar.add(listButton);
@@ -321,12 +347,44 @@ public class ChatPage extends JPanel {
         JPanel searchBar = new JPanel();
         searchBar.setLayout(new FlowLayout(FlowLayout.TRAILING, 10, 10));
         searchField = new JTextField("Tìm Kiếm");
-        searchField.setPreferredSize(new Dimension(200, 30));
+        searchField.setPreferredSize(new Dimension(150, 30));
+        searchField.addActionListener(e -> {
+            String filterName = searchField.getText().toLowerCase();
+            for (Component c : listPanel.getComponents()) {
+                if (c instanceof FriendPanel) {
+                    FriendPanel fp = (FriendPanel)c;
+                    if (!fp.getfullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+                else if (c instanceof PersonPanel) {
+                    PersonPanel pp = (PersonPanel)c;
+                    if (!pp.getfullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+                else if (c instanceof GroupPanel) {
+                    GroupPanel gp = (GroupPanel)c;
+                    if (!gp.getfullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+                else if (c instanceof FriendRequestPanel) {
+                    FriendRequestPanel frp = (FriendRequestPanel)c;
+                    if (!frp.getFullName().getText().toLowerCase().startsWith(filterName)) {
+                        listPanel.remove(c);
+                    }
+                }
+            }
+            updateListPanel();
+        });
         createMsgButton = new IconButton("/assets/icons/new-msg-icon.png");
         createGroupButton = new IconButton("/assets/icons/add-group-icon.png");
+        addFriendButton = new IconButton("/assets/icons/add-friend-icon.png");
 
         searchBar.add(searchField);
-        searchBar.add(Box.createRigidArea(new Dimension(20, 0)));
+        searchBar.add(Box.createRigidArea(new Dimension(5, 0)));
+        searchBar.add(addFriendButton);
         searchBar.add(createMsgButton);
         searchBar.add(createGroupButton);
 
@@ -347,9 +405,24 @@ public class ChatPage extends JPanel {
 
         chatSearchField = new JTextField();
         chatSearchField.setPreferredSize(new Dimension(250, 30));
-        findButton = new IconButton("/assets/icons/search-icon.png");
+        JButton searchBtn = new IconButton("/assets/icons/search-icon.png");
+        deleteAllHistoryButton = new IconButton("/assets/icons/delete-history-icon.png");
+        findButton = new JButton("Ở cuộc hội thoại này");
+        findAllButton = new JButton("Ở tất cả cuộc hội thoại");
+        searchBtn.addActionListener(e -> {
+                JButton[] btns = { findButton, findAllButton };
+                JOptionPane.showOptionDialog(this,
+                        "Bạn muốn tìm kiếm ở cuộc hội thoại nào?",
+                        "Tìm kiếm hội thoại",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null,
+                        btns,
+                        null);
+        });
         topChatPanel.add(chatSearchField);
-        topChatPanel.add(findButton);
+        topChatPanel.add(searchBtn);
+        topChatPanel.add(deleteAllHistoryButton);
 
         messageTextArea = new JTextArea();
         messageTextArea.setLineWrap(true);
@@ -357,10 +430,13 @@ public class ChatPage extends JPanel {
         messageTextArea.setFont(messageTextArea.getFont().deriveFont(16f));
         JScrollPane msgScrollPane = new JScrollPane(messageTextArea);
         msgScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        msgScrollPane.setPreferredSize(new Dimension(800, 30));
+        msgScrollPane.setPreferredSize(new Dimension(700, 30));
         sendButton = new IconButton("/assets/icons/send-icon.png");
+        chatSuggestionButtton = new IconButton("/assets/icons/llm-icon.png");
 
         bottomChatPanel.add(msgScrollPane);
+        bottomChatPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomChatPanel.add(chatSuggestionButtton);
         bottomChatPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         bottomChatPanel.add(sendButton);
         chatPanel.add(centerScrollPane, BorderLayout.CENTER);
@@ -396,14 +472,6 @@ public class ChatPage extends JPanel {
 
     public ChatLinePanel createChatLinePanel(String text, boolean sender) {
         return new ChatLinePanel(text, sender);
-    }
-
-    public JTextField getSearchField() {
-        return searchField;
-    }
-
-    public JPanel getListPanel() {
-        return listPanel;
     }
 
     public JTextArea getMessageArea() {
@@ -448,6 +516,26 @@ public class ChatPage extends JPanel {
 
     public void addFindButtonEvent(ActionListener l) {
         findButton.addActionListener(l);
+    }
+
+    public void addFindAllButtonEvent(ActionListener l) {
+        findAllButton.addActionListener(l);
+    }
+
+    public void addDeleteAllHistoryEvent(ActionListener l) {
+        deleteAllHistoryButton.addActionListener(l);
+    }
+
+    public void addChatSuggestionEvent(ActionListener l) {
+        chatSuggestionButtton.addActionListener(l);
+    }
+
+    public void addMsgListButonEvent(ActionListener l) {
+        msgListButton.addActionListener(l);
+    }
+
+    public void addAddFriendButtonEvent(ActionListener l) {
+        addFriendButton.addActionListener(l);
     }
 
     public JPanel getCenterChatPanel() {

@@ -2,6 +2,10 @@ package admin.views;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionListener;
+
+import java.util.HashMap;
+import java.util.ArrayList;
 
 public class LoginHistory extends JPanel{
     
@@ -23,8 +27,8 @@ public class LoginHistory extends JPanel{
 
 
         JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-        JButton buttonR = createStyledButton("Tải lại", new Color(100, 181, 246));
-        panel1.add(buttonR);
+        btnRefresh = createStyledButton("Tải lại", new Color(100, 181, 246));
+        panel1.add(btnRefresh);
 
         JScrollPane tableScrollPane = createTablePanel();
 
@@ -49,20 +53,6 @@ public class LoginHistory extends JPanel{
                 return false;
             }
         };
-
-
-        // Thêm dữ liệu giả
-        Object[][] fakeData = {
-            {"user1", "Nguyễn Văn A", "10:00 AM"},
-            {"user2", "Trần Thị B", "10:30 AM"},
-            {"user3", "Lê Văn C", "11:00 AM"},
-            {"user4", "Phạm Thị D", "11:30 AM"},
-            {"user5", "Vũ Văn E", "12:00 PM"}
-        };
-
-        for(Object[] row : fakeData){
-            tableModel.addRow(row); // Thêm từng hàng vào mô hình
-        }
 
         userTable = new JTable(tableModel);
         userTable.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -90,5 +80,18 @@ public class LoginHistory extends JPanel{
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setPreferredSize(new Dimension(140, 35));
         return button;
+    }
+
+    public void addRefreshEvent(ActionListener l) {
+        btnRefresh.addActionListener(l);
+    }
+
+    public void reloadTableModel(ArrayList<HashMap<String, String>> data) {
+        tableModel.setRowCount(0);
+        for(HashMap<String, String> map : data) {
+            Object[] row = {map.get("username"), map.get("fullname"), map.get("loginDate")};
+            tableModel.addRow(row);
+        }
+        tableModel.fireTableDataChanged();
     }
 }

@@ -10,6 +10,8 @@ public class UserFrame extends JFrame {
     private SearchDialog msgSearchDialog, groupSearchDialog;
     private CreateGroupDialog createGroupDialog;
     private GroupSettingDialog groupSettingDialog;
+    private ChatSuggestDialog chatSuggestDialog;
+    private SearchDialog addFriendSearchDialog;
     public UserFrame() {
         FlatLightLaf.setup();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -17,12 +19,15 @@ public class UserFrame extends JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
         setVisible(true);
+        setTitle("Ứng dụng chat");
 
         updateInfoDialog = new UpdateInfoDialog(this);
         msgSearchDialog = new SearchDialog(this);
         groupSearchDialog = new SearchDialog(this);
         createGroupDialog = new CreateGroupDialog(this);
         groupSettingDialog = new GroupSettingDialog(this);
+        chatSuggestDialog = new ChatSuggestDialog(this);
+        addFriendSearchDialog = new SearchDialog(this);
     }
 
     public void updateUserFrame(JPanel p) {
@@ -49,5 +54,13 @@ public class UserFrame extends JFrame {
 
     public GroupSettingDialog getGroupSettingDialog() {
         return groupSettingDialog;
+    }
+
+    public ChatSuggestDialog getChatSuggestDialog() {
+        return chatSuggestDialog;
+    }
+
+    public SearchDialog getAddFriendSearchDialog() {
+        return addFriendSearchDialog;
     }
 }

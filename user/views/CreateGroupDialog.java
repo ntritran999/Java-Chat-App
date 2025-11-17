@@ -99,4 +99,8 @@ public class CreateGroupDialog extends JDialog {
     public void addCreateGroupEvent(ActionListener l) {
         createButton.addActionListener(l);
     }
+
+    public String getSearch() {
+        return addMemberField.getText();
+    }
 }
