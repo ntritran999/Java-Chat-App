@@ -5,18 +5,22 @@ import java.awt.*;
 import java.awt.event.*;
 import com.formdev.flatlaf.FlatLightLaf;
 
-import admin.controllers.UsersFriendsListController;
+import admin.controllers.*;
 
 public class AdminDashboard extends JFrame{
     
     private JPanel sidebarPanel;
     private JPanel contentPanel;    
+    private AdminDashboard self;
+    private JButton[] menuButtons; 
     public AdminDashboard(){
         setTitle("Admin Dashboard");
         setSize(1366, 768);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null); // center the app
         setResizable(false); // unable to resize the app
+
+        self=  this;
         
         initComponents();
         setVisible(true);
@@ -35,7 +39,9 @@ public class AdminDashboard extends JFrame{
         add(sidebarPanel, BorderLayout.WEST);
         
         // Content area
-        contentPanel = new UserManagement();
+        UserManagement viewUserManagementStart = new UserManagement();
+        new UserManagementController(viewUserManagementStart, self);
+        contentPanel = viewUserManagementStart;
         add(contentPanel, BorderLayout.CENTER);
     }
     
@@ -90,7 +96,7 @@ public class AdminDashboard extends JFrame{
         panel.add(addSectionLabel("Quản lý"));
 
         JButton[] buttons = new JButton[menuItems.length];
-
+        menuButtons = buttons;
         // Menu items
         for(int i = 0; i < menuItems.length; ++i){
             if(i == 2)
@@ -137,7 +143,9 @@ public class AdminDashboard extends JFrame{
                 switch (text){
                     case "Quản lý danh sách người dùng":
                         contentPanel.removeAll();
-                        contentPanel.add(new UserManagement()); 
+                        UserManagement viewUserManagement = new UserManagement();
+                        new UserManagementController(viewUserManagement, self);
+                        contentPanel.add(viewUserManagement);
                         break;
                     case "Danh sách đăng nhập":
                         contentPanel.removeAll();
@@ -183,6 +191,29 @@ public class AdminDashboard extends JFrame{
         return button;
     }
     
+    public void showUsersFriendsList(String username) {
+        for(JButton btn : menuButtons){
+            btn.setBackground(new Color(245, 245, 245));
+        }
+
+        for(JButton btn : menuButtons){
+            if (btn.getText().equals("Danh sách người dùng và số lượng bạn bè")) {
+                btn.setBackground(new Color(32, 198, 198));
+                break;
+            }
+        }
+        contentPanel.removeAll();
+        UsersFriendsList view = new UsersFriendsList();
+        UsersFriendsListController controller = new UsersFriendsListController(view);
+
+        if(username != null && !username.trim().isEmpty())
+            controller.queryListFriend(username);
+        
+        contentPanel.add(view);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
 
 
     public static void main(String[] args){

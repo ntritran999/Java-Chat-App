@@ -2,10 +2,17 @@ package admin.views;
 
 import javax.swing.*;
 import javax.swing.table.*;
+
+import admin.controllers.UserManagementController;
+
 import java.awt.*;
 import java.awt.event.*;
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
+import java.time.LocalDate;
+import java.util.function.Function;
 
-public class UserManagement extends JPanel {
+public class UserManagement extends JPanel{
 
     private JTable userTable;
     private DefaultTableModel tableModel;
@@ -16,11 +23,10 @@ public class UserManagement extends JPanel {
     private JComboBox<String> sortCombo;
 
     private JButton btnSearch;
-    private JButton btnAdd, btnSave;
+    private JButton btnAdd, btnUpdate;
     private java.util.List<JButton> actionButtons = new java.util.ArrayList<>();
-    private JPasswordField passwordField;
 
-    public UserManagement() {
+    public UserManagement(){
         setLayout(new BorderLayout(10, 10));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -42,15 +48,15 @@ public class UserManagement extends JPanel {
         btnAdd.setFocusPainted(false);
         btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        btnSave = new JButton("Lưu");
-        btnSave.setPreferredSize(new Dimension(90, 30));
-        btnSave.setBackground(new Color(33, 150, 243));
-        btnSave.setForeground(Color.WHITE);
-        btnSave.setFocusPainted(false);
-        btnSave.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnUpdate = new JButton("Cập nhật");
+        btnUpdate.setPreferredSize(new Dimension(90, 30));
+        btnUpdate.setBackground(new Color(33, 150, 243));
+        btnUpdate.setForeground(Color.WHITE);
+        btnUpdate.setFocusPainted(false);
+        btnUpdate.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         insertAndSave.add(btnAdd);
-        insertAndSave.add(btnSave);
+        insertAndSave.add(btnUpdate);
 
         JPanel filterPanel = createFilterPanel();
         JScrollPane tableScrollPane = createTablePanel();
@@ -73,7 +79,7 @@ public class UserManagement extends JPanel {
 
 
 
-    private JPanel createFilterPanel() {
+    private JPanel createFilterPanel(){
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 20));
         panel.setBackground(Color.WHITE);
 
@@ -81,7 +87,7 @@ public class UserManagement extends JPanel {
         filterLabel.setFont(new Font("Arial", Font.PLAIN, 14));
 
         filterTypeCombo = new JComboBox<>(new String[]{
-                "Tên đăng nhập", "Họ tên", "Email"
+                "Tên đăng nhập", "Họ tên"
         });
         filterTypeCombo.setPreferredSize(new Dimension(150, 30));
         filterTypeCombo.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -126,33 +132,18 @@ public class UserManagement extends JPanel {
     }
 
     private JScrollPane createTablePanel(){
-        String[] columns = {
+        String[] columns ={
             "ID", "Tên đăng nhập", "Họ tên", "Địa chỉ",
             "Ngày sinh", "Giới tính", "Email", "Ngày tạo", "Trạng thái", "Hành động"
         };
 
-        tableModel = new DefaultTableModel(columns, 0) {
+        tableModel = new DefaultTableModel(columns, 0){
             @Override
-            public boolean isCellEditable(int row, int column) {
+            public boolean isCellEditable(int row, int column){
                 return column == 9;
             }
         };
 
-        // Dữ liệu mẫu
-        for (int i = 1; i <= 20; i++) {
-            Object[] rowData = {
-                i, "user" + i, "Họ Tên " + i, "Địa chỉ " + i,
-                "01/01/2000", (i % 2 == 0) ? "Nam" : "Nữ",
-                "user" + i + "@example.com", "01/01/2023",
-                (i % 3 == 0) ? "Bị khoá" : "Hoạt động", ""
-            };
-            tableModel.addRow(rowData);
-
-            JButton btn = createActionButton((String) rowData[1], i - 1);
-            actionButtons.add(btn);
-        }
-
-        ActionButtonRenderer.setActionButtons(actionButtons);
         userTable = new JTable(tableModel);
         userTable.setFont(new Font("Arial", Font.PLAIN, 13));
         userTable.setRowHeight(45);
@@ -172,7 +163,12 @@ public class UserManagement extends JPanel {
         return scrollPane;
     }
 
-    private JButton createActionButton(String username, int rowIndex){
+    public void updateActionButtonRenderer() {
+        ActionButtonRenderer.setActionButtons(actionButtons);
+        userTable.repaint();
+    }
+
+    public JButton createActionButton(UserManagementController umController, String username, int rowIndex){
         JButton button = new JButton("Khác");
         button.setFont(new Font("Arial", Font.BOLD, 12));
         button.setBackground(new Color(100, 181, 246)); // xanh nhẹ
@@ -181,13 +177,153 @@ public class UserManagement extends JPanel {
         button.setBorderPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        button.addActionListener(e -> showUserPopup(rowIndex));
+        button.addActionListener(e -> showUserPopup(umController, rowIndex));
         return button;
     }
 
     // Hiển thị popup 
-    private void showUserPopup(int row){
+    private JPanel createRow(JComponent... components){
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
+        for (JComponent c : components) {
+            row.add(c);
+        }
+        return row;
+    }
+
+    public void showCreateAccountUI(UserManagementController umController){
         Window parentWindow = SwingUtilities.getWindowAncestor(UserManagement.this);
+        JDialog dialog = new JDialog(parentWindow, "Thêm tài khoản", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setSize(700, 420);
+        dialog.setLocationRelativeTo(parentWindow);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+
+        JLabel usernameLabel = new JLabel("Tên đăng nhập:");
+        JTextField usernameField = new JTextField(20);
+        mainPanel.add(createRow(new JComponent[]{ usernameLabel, usernameField }));
+
+        JLabel passLabel = new JLabel("Mật khẩu:");
+        JPasswordField passwordField = new JPasswordField(20);
+        mainPanel.add(createRow(new JComponent[]{ passLabel, passwordField }));
+
+        JLabel dobLabel = new JLabel("Ngày sinh:");
+        DatePickerSettings dobS = new DatePickerSettings();
+        dobS.setFormatForDatesCommonEra("dd/MM/yyyy");
+        DatePicker dobDatePicker = new DatePicker(dobS);
+        dobDatePicker.setDateToToday();
+        mainPanel.add(createRow(new JComponent[]{ dobLabel, dobDatePicker }));
+
+        JLabel fullLabel = new JLabel("Họ và tên:");
+        JTextField fullNameField = new JTextField(20);
+        mainPanel.add(createRow(new JComponent[]{ fullLabel, fullNameField }));
+
+        JLabel emailLabel = new JLabel("Email:");
+        JTextField emailField = new JTextField(20);
+        mainPanel.add(createRow(new JComponent[]{ emailLabel, emailField }));
+
+        JLabel roleLabel = new JLabel("Phân quyền:");
+        JRadioButton adminRadio = new JRadioButton("Admin");
+        JRadioButton userRadio = new JRadioButton("User");
+        userRadio.setSelected(true);
+
+        ButtonGroup groupRole = new ButtonGroup();
+        groupRole.add(adminRadio);
+        groupRole.add(userRadio);
+
+        JPanel rolePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        rolePanel.add(adminRadio);
+        rolePanel.add(userRadio);
+
+        mainPanel.add(createRow(new JComponent[]{ roleLabel, rolePanel }));
+
+        JButton btnAddAccount = createPopupButton("Thêm tài khoản", new Color(33, 150, 243), e -> {
+            String username = usernameField.getText().trim();
+            String password = new String(passwordField.getPassword());
+            String fullname = fullNameField.getText().trim();
+            String email = emailField.getText().trim();
+            String dob = dobDatePicker.getDate().toString();
+            String role = adminRadio.isSelected() ? "A" : "U";
+
+            if(username == null || username.isEmpty() || password == null || password.isEmpty() || fullname == null || fullname.isEmpty() || 
+            email == null || email.isEmpty() || dob == null || dob.isEmpty() || role == null || role.isEmpty())
+                JOptionPane.showMessageDialog(dialog, "Không thêm được tài khoản");
+
+            umController.handleCreateAccount(username, password, fullname, email, dob, role, dialog);
+
+            usernameField.setText("");
+            passwordField.setText("");
+            fullNameField.setText("");
+            emailField.setText("");
+        });
+
+        dialog.add(mainPanel, BorderLayout.CENTER);
+        dialog.add(btnAddAccount, BorderLayout.SOUTH);
+        dialog.setVisible(true);
+    }
+
+
+    public void showUpdateUI(UserManagementController umController){
+        Window parentWindow = SwingUtilities.getWindowAncestor(UserManagement.this);
+        JDialog dialog = new JDialog(parentWindow, "Cập nhật thông tin", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setSize(520, 250);
+        dialog.setLocationRelativeTo(parentWindow);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel idFPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        JLabel idLabel = new JLabel("ID user: ");
+        JTextField idField = new JTextField(15);
+        idField.setPreferredSize(new Dimension(180, 28));
+        idFPanel.add(idLabel);
+        idFPanel.add(idField);
+
+        JPanel fullNameFPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        JLabel fullNameLabel = new JLabel("Họ tên: ");
+        JTextField fullNameField = new JTextField(15);
+        fullNameField.setPreferredSize(new Dimension(180, 28));
+        fullNameFPanel.add(fullNameLabel);
+        fullNameFPanel.add(fullNameField);
+
+        JPanel addressFPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        JLabel addressLabel = new JLabel("Địa chỉ: ");
+        JTextField addressField = new JTextField(15);
+        addressField.setPreferredSize(new Dimension(180, 28));
+        addressFPanel.add(addressLabel);
+        addressFPanel.add(addressField);
+
+        JPanel emailFPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        JLabel emailLabel = new JLabel("Email: ");
+        JTextField emailField = new JTextField(15);
+        emailField.setPreferredSize(new Dimension(180, 28));
+        emailFPanel.add(emailLabel);
+        emailFPanel.add(emailField);
+        JPanel mainForm = new JPanel();
+        mainForm.add(fullNameFPanel);
+        mainForm.add(addressFPanel);
+        mainForm.add(emailFPanel);
+
+        JButton btnUpdatePassword = createPopupButton("Cập nhật", new Color(33, 150, 243), e ->{
+            String id = new String(idField.getText().trim());
+            String fullname = new String(fullNameField.getText().trim());
+            String address = new String(addressField.getText().trim());
+            String email = new String(emailField.getText().trim());
+            umController.handleUpdateInfoUser(id, fullname, address, email, dialog);
+            idField.setText("");
+            fullNameField.setText("");
+            addressField.setText("");
+            emailField.setText("");
+        });
+        dialog.add(idFPanel, BorderLayout.NORTH);
+        dialog.add(mainForm, BorderLayout.CENTER);
+        dialog.add(btnUpdatePassword, BorderLayout.SOUTH);
+        dialog.setVisible(true);
+    }
+
+    private void showUserPopup(UserManagementController umController, int row){
+        Window parentWindow = SwingUtilities.getWindowAncestor(UserManagement.this);
+        String id = userTable.getValueAt(row, 0).toString();
         String username = userTable.getValueAt(row, 1).toString();
         String fullName = userTable.getValueAt(row, 2).toString();
         String email = userTable.getValueAt(row, 6).toString();
@@ -216,13 +352,10 @@ public class UserManagement extends JPanel {
         passwordField.setPreferredSize(new Dimension(180, 28));
         passwordPanel.add(passwordField);
 
-        JButton btnUpdatePassword = createPopupButton("Cập nhật mật khẩu", new Color(33, 150, 243), e -> {
+        JButton btnUpdatePassword = createPopupButton("Cập nhật mật khẩu", new Color(33, 150, 243), e ->{
             String newPass = new String(passwordField.getPassword());
-            if(newPass.isEmpty()){
-                JOptionPane.showMessageDialog(dialog, "Vui lòng nhập mật khẩu mới!");
-            }else{
-                JOptionPane.showMessageDialog(dialog, "Đã cập nhật mật khẩu mới cho " + username);
-            }
+            umController.handleUpdatePassword(id, username, newPass, dialog);
+            passwordField.setText("");
         });
         btnUpdatePassword.setPreferredSize(new Dimension(150, 28));
         passwordPanel.add(btnUpdatePassword);
@@ -231,19 +364,22 @@ public class UserManagement extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
 
-        buttonPanel.add(createPopupButton("Xóa", new Color(110, 112, 116), e ->
-            JOptionPane.showMessageDialog(dialog, "Đã xóa tài khoản " + username)));
+        buttonPanel.add(createPopupButton("Xóa", new Color(110, 112, 116), e ->{
+            umController.handleDeleteUser(id, username, dialog);
+        }));
         
         if(status.charAt(0) != 'B'){
-            buttonPanel.add(createPopupButton("Khóa", new Color(244, 67, 54), e ->
-                    JOptionPane.showMessageDialog(dialog, "Đã khóa tài khoản " + username)));
+            buttonPanel.add(createPopupButton("Khóa", new Color(244, 67, 54), e ->{
+                umController.handleLockUser(id, username, dialog);    
+            }));
         }else{
             buttonPanel.add(createPopupButton("Mở khóa", new Color(76, 175, 80), e ->
                     JOptionPane.showMessageDialog(dialog, "Đã mở khóa tài khoản " + username)));
         }
 
-        buttonPanel.add(createPopupButton("Danh sách bạn bè", new Color(100, 181, 246), e ->
-                JOptionPane.showMessageDialog(dialog, "Hiển thị danh sách bạn bè của " + username)));
+        buttonPanel.add(createPopupButton("Danh sách bạn bè", new Color(100, 181, 246), e ->{
+            umController.handleShowFriendsList(username, dialog);
+        }));
 
         buttonPanel.add(createPopupButton("Lịch sử đăng nhập", new Color(255, 152, 0), e ->
                 JOptionPane.showMessageDialog(dialog, "Xem lịch sử đăng nhập của " + username)));
@@ -265,5 +401,44 @@ public class UserManagement extends JPanel {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.addActionListener(listener);
         return button;
+    }
+
+    public JTable getUserTable(){
+        return userTable;
+    }
+
+    public DefaultTableModel getTableModel(){
+        return tableModel;
+    }
+
+    public JTextField getSearchField(){
+        return searchField;
+    }
+
+    public JComboBox<String> getFilterTypeCombo(){
+        return filterTypeCombo;
+    }
+
+    public JComboBox<String> getStatusFilterCombo(){
+        return statusFilterCombo;
+    }
+
+    public JComboBox<String> getSortCombo(){
+        return sortCombo;
+    }
+
+    public JButton getBtnSearch(){
+        return btnSearch;
+    }
+
+    public JButton getBtnAdd(){
+        return btnAdd;
+    }
+
+    public JButton getBtnUpdate(){
+        return btnUpdate;
+    }
+    public java.util.List<JButton> getActionButtonManageView(){
+        return actionButtons;
     }
 }

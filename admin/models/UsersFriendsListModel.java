@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+    
 public class UsersFriendsListModel{
     private int id;
     private String userName;
@@ -83,11 +83,6 @@ public class UsersFriendsListModel{
         this.friendOfFriends = friendOfFriends;
     }
 
-    public Object[] toTableRow() {
-        return new Object[]{
-            id, userName, fullName, email, createdDate, directFriends, friendOfFriends
-        };
-    }
     // fetching API
     public static List<UsersFriendsListModel> getAllUsers(String searchName, String sortBy, String filterOpertator, int friendsCount) throws SQLException{
         List<UsersFriendsListModel> users = new ArrayList<>();
@@ -187,6 +182,65 @@ public class UsersFriendsListModel{
             rs.close();
         if(st != null) 
             st.close();
+        return users;
+    }
+
+    public static List<UsersFriendsListModel> queryListFriendOfName(String username) throws SQLException{
+        List<UsersFriendsListModel> users = new ArrayList<>();
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        String sql = """
+                    with direct_friends_list as(
+                        select  user1 , count(user2) as direct_count
+                        from friend
+                        group by user1
+                    ),
+                    friends_of_friends_list as(
+                        select fl1.user1, count(distinct fl2.user2) as fof_count
+                        from friend fl1
+                        join friend fl2 on fl1.user2 = fl2.user1
+                        where fl1.user1 != fl2.user2
+                        group by fl1.user1
+                    )
+
+                    select ai.user_id, ai.username, ui.fullname, a.email, to_char(a.create_date, 'DD/MM/YYYY HH24:MI:SS') as created_date,
+                        coalesce(df.direct_count, 0) as direct_friends, 
+                        coalesce(fof.fof_count, 0) as friends_of_friends
+                    from account_info ai
+                    join user_info ui on ui.id = ai.user_id
+                    join account a on a.username = ai.username
+                    left join direct_friends_list df on ai.user_id = df.user1
+                    left join friends_of_friends_list fof on ai.user_id = fof.user1
+                    join friend f on f.user1 = ai.user_id
+                    where f.user2 = (select user_id from account_info where username = (?))
+                """;
+        st = conn.prepareStatement(sql);
+        int paramIndex = 1;
+        if(username != null && !username.trim().isEmpty())
+            st.setString(paramIndex++, username);
+        
+
+        // fetch data
+        rs = st.executeQuery();
+        while (rs.next()){
+            UsersFriendsListModel user = new UsersFriendsListModel(
+                rs.getInt("user_id"),
+                rs.getString("username"),
+                rs.getString("fullname"),
+                rs.getString("email"),
+                rs.getString("created_date"),
+                rs.getInt("direct_friends"),
+                rs.getInt("friends_of_friends")
+            );
+            users.add(user);
+        }
+
+        // Close resources
+        if (rs != null) 
+            rs.close();
+        if(st != null) 
+            st.close();
+        System.out.println("query done");
         return users;
     }
 }

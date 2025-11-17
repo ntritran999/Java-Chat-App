@@ -26,7 +26,6 @@ public class UsersFriendsList extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
         initComponents();
-        //loadSampleData(); // nhớ xóa
     }
     
     private void initComponents() {
@@ -196,27 +195,6 @@ public class UsersFriendsList extends JPanel {
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         
         return scrollPane;
-    }
-    
-    private void loadSampleData() {
-        Object[][] data = {
-            {1, "user001", "Nguyễn Văn An", "nguyenvanan@email.com", "01/01/2024 08:30:15", 45, 320},
-            {2, "user002", "Trần Thị Bình", "tranthibinh@email.com", "05/01/2024 09:15:42", 52, 380},
-            {3, "user003", "Lê Hoàng Công", "lehoangcong@email.com", "10/01/2024 14:20:30", 38, 290},
-            {4, "user004", "Phạm Thu Dung", "phamthudung@email.com", "15/01/2024 10:45:18", 67, 450},
-            {5, "user005", "Hoàng Minh Đức", "hoangminhduc@email.com", "20/01/2024 16:30:55", 89, 520},
-            {6, "user006", "Võ Thị Ế", "vothie@email.com", "25/01/2024 07:15:22", 23, 180},
-            {7, "user007", "Đặng Quốc Phong", "dangquocphong@email.com", "30/01/2024 11:40:10", 56, 410},
-            {8, "user008", "Bùi Lan Hương", "builanhuong@email.com", "02/02/2024 13:25:45", 71, 480},
-            {9, "user009", "Trương Văn Hải", "truongvanhai@email.com", "05/02/2024 15:50:33", 34, 250},
-            {10, "user010", "Phan Thị Xuân", "phanthixuan@email.com", "10/02/2024 17:10:20", 82, 510},
-            {11, "user011", "Ngô Minh Khai", "ngominhkhai@email.com", "15/02/2024 08:20:10", 41, 300},
-            {12, "user012", "Lý Thu Lan", "lythulan@email.com", "20/02/2024 09:45:30", 59, 420}
-        };
-        
-        for (Object[] row : data) {
-            tableModel.addRow(row);
-        }
     }
 
     public JTextField getSearchNameField(){

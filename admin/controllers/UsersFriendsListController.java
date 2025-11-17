@@ -6,6 +6,7 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.*;
+import java.sql.SQLException;
 
 public class UsersFriendsListController{
     private UsersFriendsList view;
@@ -150,6 +151,15 @@ public class UsersFriendsListController{
         }
     }
 
+    public boolean queryListFriend(String username){
+        if(username == null || username.trim().isEmpty())
+            return false;
+        view.getSearchNameField().setText(username.trim());
+        loadQueryListFriendOfName(username);
+        return true;
+
+    }
+
     private void handleClearFilter(){
         currentFilterOperator = null;
         currentFriendsCount = -1;
@@ -201,17 +211,39 @@ public class UsersFriendsListController{
         worker.execute();
     }
 
-    public void resetFilters(){
-        currentSearchName = null;
-        currentSortBy = "DATE_DESC";
-        currentFilterOperator = null;
-        currentFriendsCount = -1;
+    private void loadQueryListFriendOfName(String username){
+        view.getUserTable().setEnabled(false);
+        SwingWorker<List<UsersFriendsListModel>, Void> worker = new SwingWorker<List<UsersFriendsListModel>,Void>() {
+            @Override
+            protected List<UsersFriendsListModel> doInBackground() throws SQLException{
+                return UsersFriendsListModel.queryListFriendOfName(username);
+            }
 
-        view.getSearchNameField().setText("");
-        view.getFriendsCountField().setText("");
-        view.getSortCombo().setSelectedIndex(2);
-        view.getFilterOperator().setSelectedIndex(0);
+            @Override
+            protected void done(){
+                List<UsersFriendsListModel> users = null;
+                try {
+                    users = get();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } 
+                tableModel.setRowCount(0);
+                for(UsersFriendsListModel user : users){
+                    Object[] row = new Object[]{
+                        user.getId(),
+                        user.getUserName(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        user.getCreatedDate(),
+                        user.getDirectFriends(),
+                        user.getFriendOfFriends()
+                    };
+                    tableModel.addRow(row);
+                }
+            }
 
-        loadData();
+        };
+        view.getUserTable().setEnabled(true);
+        worker.execute();
     }
 }
