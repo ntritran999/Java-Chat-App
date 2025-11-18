@@ -41,91 +41,28 @@ public class LoginPage extends JPanel {
         resetPanel.setBackground(new Color(bgColorDark));
         buildResetLayout();
         
-        JPanel main = new JPanel();
+        main = new JPanel();
         main.setBackground(new Color(bgColorDark));
         main.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JLabel title = new JLabel("ĐĂNG NHẬP");
-        title.setFont(new Font("SansSerif", Font.BOLD, 32));
-        title.setForeground(new Color(textColor));
-
-        JLabel usernameLabel = new JLabel("Tài khoản: ");
-        usernameLabel.setForeground(new Color(textColor));
-        usernameField = new JTextField();
-
-        JLabel passwordLabel = new JLabel("Mật khẩu: ");
-        passwordLabel.setForeground(new Color(textColor));
-        passwordField = new JPasswordField();
-
-        loginButton = new JButton("Đăng nhập");
-        createAccButton = new JButton("Tạo tài khoản mới");
-        forgetPasswordButton = new JButton("Quên mật khẩu?");
-
-        GroupLayout mainLayout = new GroupLayout(main);
-        main.setLayout(mainLayout);
+        main.setLayout(new CardLayout()); // Nhớ import java.awt.CardLayout;
+        main.add(loginPanel, "login");
+        main.add(resetPanel, "reset");
+        showLogin();
+        
+        GroupLayout mainLayout = new GroupLayout(this);
+        setLayout(mainLayout);
         mainLayout.setHorizontalGroup(
             mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(mainLayout.createSequentialGroup()
-                .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addGroup(mainLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-                            .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                .addGroup(GroupLayout.Alignment.TRAILING, mainLayout.createSequentialGroup()
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(forgetPasswordButton)
-                                    .addGap(18, 18, 18)
-                                    .addComponent(createAccButton)
-                                    .addGap(18, 18, 18)
-                                    .addComponent(loginButton))
-                                .addGroup(mainLayout.createSequentialGroup()
-                                    .addComponent(passwordLabel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addGap(18, 18, 18)
-                                    .addComponent(passwordField, GroupLayout.PREFERRED_SIZE, 319, GroupLayout.PREFERRED_SIZE)))
-                            .addGroup(GroupLayout.Alignment.TRAILING, mainLayout.createSequentialGroup()
-                                .addComponent(usernameLabel, GroupLayout.PREFERRED_SIZE, 71, GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(usernameField, GroupLayout.PREFERRED_SIZE, 319, GroupLayout.PREFERRED_SIZE))))
-                    .addGroup(mainLayout.createSequentialGroup()
-                        .addGap(150, 150, 150)
-                        .addComponent(title)))
-                .addContainerGap(73, Short.MAX_VALUE))
-        );
-        mainLayout.setVerticalGroup(
-            mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(mainLayout.createSequentialGroup()
-                .addGap(157, 157, 157)
-                .addComponent(title)
-                .addGap(72, 72, 72)
-                .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(usernameLabel)
-                    .addComponent(usernameField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(passwordLabel)
-                    .addComponent(passwordField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(forgetPasswordButton)
-                    .addComponent(createAccButton)
-                    .addComponent(loginButton))
-                .addContainerGap(470, Short.MAX_VALUE))
-        );
-
-        GroupLayout loginLayout = new GroupLayout(this);
-        setLayout(loginLayout);
-        loginLayout.setHorizontalGroup(
-            loginLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(loginLayout.createSequentialGroup()
                 .addComponent(main, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(200, 200, 200)
                 .addComponent(logo, GroupLayout.PREFERRED_SIZE, 441, GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(157, Short.MAX_VALUE))
         );
-        loginLayout.setVerticalGroup(
-            loginLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+        mainLayout.setVerticalGroup(
+            mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addComponent(main, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(loginLayout.createSequentialGroup()
+            .addGroup(mainLayout.createSequentialGroup()
                 .addGap(275, 275, 275)
                 .addComponent(logo)
                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
