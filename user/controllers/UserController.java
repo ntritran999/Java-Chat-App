@@ -27,7 +27,7 @@ public class UserController {
 
     public void useLoginPage() {
         LoginPage lp = new LoginPage();
-        // boolean isAdmin = true;
+        //boolean isAdmin = true;
         boolean isAdmin = false;
         lp.addLoginButtonEvent(e -> {
             if (isAdmin) {
@@ -48,8 +48,10 @@ public class UserController {
         lp.addCreateAccButtonEvent(e -> {
             useSignUpPage();
         });
-        lp.addForgetPasswordButtonEvent(e -> {
-            
+        lp.addResetPasswordButtonEvent(e -> {
+            // lp.showLogin();
+            // lp.showResetFail("Sai tên đăng nhập.");
+            lp.showResetSuccess();
         });
 
         userFrame.updateUserFrame(lp);
@@ -86,7 +88,9 @@ public class UserController {
         });
 
         cp.addExitButtonEvent(e -> {
-            useLoginPage();
+            if (cp.showLogoutWarning() == 0) {
+                useLoginPage();
+            }
         });
 
         cp.addInboxButtonEvent(e -> {

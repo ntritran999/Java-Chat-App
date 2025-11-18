@@ -567,4 +567,16 @@ public class ChatPage extends JPanel {
         centerChatPanel.revalidate();
         centerChatPanel.repaint();
     }
+
+    public int showLogoutWarning() {
+        Object[] options = { "Có", "Không" };
+        return JOptionPane.showOptionDialog(this, 
+                                "Bạn có chắc chắn không", 
+                                  "Đăng xuất",
+                                  JOptionPane.YES_NO_OPTION,
+                                  JOptionPane.WARNING_MESSAGE,
+                                  null,
+                                  options,
+                                  options[0]);
+    }
 }
