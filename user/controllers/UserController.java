@@ -5,12 +5,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.sql.SQLException;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import admin.views.AdminDashboard;
 import user.models.*;
@@ -27,23 +29,44 @@ public class UserController {
 
     public void useLoginPage() {
         LoginPage lp = new LoginPage();
-        //boolean isAdmin = true;
-        boolean isAdmin = false;
+        LoginPageModel lpModel = new LoginPageModel(null, null);
         lp.addLoginButtonEvent(e -> {
-            if (isAdmin) {
-                userFrame.setVisible(false);
-                AdminDashboard ad = new AdminDashboard();
-                ad.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        userFrame.setVisible(true);
+            SwingWorker<Integer, Void> worker = new SwingWorker<Integer,Void>(){
+                @Override
+                protected Integer doInBackground() throws SQLException{
+                    lpModel.setUserName(lp.getUsernameField().getText().trim());
+                    String password = new String(lp.getPasswordField().getPassword());
+                    lpModel.setPassword(password);
+
+                    return lpModel.authenticateAccount();
+                }
+
+                @Override
+                protected void done(){
+                    try {
+                        lpModel.setAuthen(get());
+                        final int isAuthen = lpModel.getAuthen();
+                        if (isAuthen == 2) {
+                            userFrame.setVisible(false);
+                            AdminDashboard ad = new AdminDashboard();
+                            ad.addWindowListener(new WindowAdapter() {
+                                @Override
+                                public void windowClosing(WindowEvent e) {
+                                    userFrame.setVisible(true);
+                                }
+                            });
+                        }       
+                        else if(isAuthen == 1) {
+                            useChatPage(lpModel.getUsername());
+                        } else{
+                            lp.showLoginFail();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                });
-            }
-            else {
-                String username = "alice";
-                useChatPage(username);
-            }
+                }
+            };
+            worker.execute();
         });
         lp.addCreateAccButtonEvent(e -> {
             useSignUpPage();
@@ -51,16 +74,99 @@ public class UserController {
         lp.addResetPasswordButtonEvent(e -> {
             // lp.showLogin();
             // lp.showResetFail("Sai tên đăng nhập.");
-            lp.showResetSuccess();
-        });
+            SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean,Void>() {
+                LoginPageModel model = new LoginPageModel();
+                @Override
+                protected Boolean doInBackground() throws SQLException{
+                    String username = lp.getUsernameForReset().getText().trim();
+                    if(username != null && !username.isEmpty()){
+                        model.setUserName(username);
+                        return model.checkingExistsResetAccountPassword();
+                    }
+                    return false;
+                }
 
+                @Override
+                protected void done(){
+                    try {
+                        boolean success = get();
+                        if(!success)
+                            lp.showResetFail("Không tồn tại username trên hệ thống");
+                        else{
+                            String emailTo = model.getEmail();
+                            String newPass = model.getPassword();
+                            if(emailTo != null && !emailTo.trim().isEmpty()){
+                                StringBuilder stringBuilder = new StringBuilder();
+                                stringBuilder.append("Mật khẩu mới: ");
+                                stringBuilder.append(newPass);
+                                GmailSender.sendMail(emailTo, stringBuilder.toString());
+                                lp.showResetSuccess();
+                                lp.getUsernameForReset().setText("");
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            worker.execute();
+        });
         userFrame.updateUserFrame(lp);
     }
 
     public void useSignUpPage() {
         SignupPage sp = new SignupPage();
         sp.addCreateAccButtonEvent(e -> {
-            
+            SwingWorker<Integer, Void> worker = new SwingWorker<Integer,Void>() {
+                @Override
+                protected Integer doInBackground() throws SQLException{
+                    String fullName = sp.getFullnameField().getText().trim();
+                    String email = sp.getEmailField().getText().trim();
+                    String gender = null;
+                    if(sp.getMaleRadioButton().isSelected())
+                        gender = "M";
+                    else if(sp.getFemaleRadioButton().isSelected())
+                        gender = "F";
+                    String dob = sp.getDateOfBirthPicker().getDate().toString();
+                    String address = sp.getAddressField().getText().trim();
+                    String username = sp.getUsernameField().getText().trim();
+                    String password = new String(sp.getPasswordField().getPassword());
+                    String confirmPassword = new String(sp.getConfirmPasswordField().getPassword());
+                    if(!confirmPassword.equals(password))
+                        return -3;
+                    SignupModel model = new SignupModel(fullName, email, gender, dob, address, username, password);
+                    return model.signUpAccount();
+                }
+
+                @Override 
+                protected void done(){
+                    try {
+                        int status = get();
+                        switch (status) {
+                            case -3:
+                                sp.showSignUpFail("Mật khẩu xác nhận lại không khớp");
+                                break;
+                            case -2:
+                                sp.showSignUpFail("Lỗi hệ thống");
+                                break;
+                            case -1:
+                                sp.showSignUpFail("Username hoặc password không hợp lệ");
+                                break;
+                            case 0:
+                                sp.showSignUpFail("Username đã tồn tại");
+                                break;
+                            case 1:
+                                sp.showSignUpSuccess();
+                                useLoginPage();
+                            default:
+                                break;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            worker.execute();
         });
         sp.addReturnLoginButtonEvent(e -> {
             useLoginPage();
