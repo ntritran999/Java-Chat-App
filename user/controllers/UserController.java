@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
+import java.time.LocalDate;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -191,6 +192,82 @@ public class UserController {
 
         cp.addSettingButtonEvent(e -> {
             updateInfoDialog.showUpdateInfoDialog();
+        });
+
+        updateInfoDialog.addUpdateButtonEvent(action1 ->{
+            SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean,Void>() {
+                @Override
+                protected Boolean doInBackground() throws SQLException{
+                    String fullName = null; 
+                    String gender = null; 
+                    String dob = null; 
+                    String address = null; 
+                    String email = null;
+                    fullName = updateInfoDialog.getFullNameField().getText().trim();
+                    gender = null;
+                    if(updateInfoDialog.getMaleRadioButton().isSelected())
+                        gender = "M";
+                    else if(updateInfoDialog.getFemaleRadioButton().isSelected())
+                        gender = "F";
+                    LocalDate dateDOB = updateInfoDialog.getDobPicker().getDate();
+                    if(dateDOB != null)
+                        dob = dateDOB.toString();
+                    address = updateInfoDialog.getAddressTextArea().getText().trim();
+                    email = updateInfoDialog.getEmailField().getText().trim();
+                    UpdateInfoDialogModel model = new UpdateInfoDialogModel(fullName, gender, dob, address, email, null, username);
+                    return model.updateInfoToDb();
+                }
+
+                @Override
+                protected void done(){
+                    try {
+                        boolean success = get();
+                        if(success)
+                            cp.showUpdateInfoSuccess();
+                        else    
+                            cp.showUpdateInfoFail();
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            worker.execute();
+        });
+
+        updateInfoDialog.addUpdatePasswordEvent(action2 ->{
+            SwingWorker<Integer, Void> worker = new SwingWorker<Integer,Void>() {
+                // Integer -1(confirm pass ko khop), 0(update fail), 1(update success)
+                @Override
+                protected Integer doInBackground() throws SQLException{ 
+                    String newPassword = new String(updateInfoDialog.getNewPasswordField().getPassword());
+                    String newPasswordConfirm = new String(updateInfoDialog.getConfirmPasswordField().getPassword());
+                    if(!newPasswordConfirm.equals(newPassword))
+                        return -1;
+                    UpdateInfoDialogModel model = new UpdateInfoDialogModel(newPassword, username);
+                    return model.updatePasswordToDb();
+                }
+
+                @Override
+                protected void done(){
+                    try{
+                        int success = get();
+                        if(success == 1){
+                            cp.showUpdatePassSuccess();
+                            updateInfoDialog.getNewPasswordField().setText("");
+                            updateInfoDialog.getConfirmPasswordField().setText("");
+                        }
+                        else if(success == -1)
+                            cp.showUpdatePassFail("Mật khẩu xác nhận không khớp");
+                        else
+                            cp.showUpdatePassFail("Cập nhật mật khẩu không thành công");
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
+
+            };
+            worker.execute();
         });
 
         cp.addExitButtonEvent(e -> {
