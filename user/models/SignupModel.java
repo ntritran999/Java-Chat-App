@@ -112,8 +112,8 @@ public class SignupModel {
             paramIndex = 1;
             String hashPassword = get_SHA_256_SecurePassword(password);
             String sql2 = """
-                        insert into account (username, password, role, email)
-                        values (?, ?, 'U', ?);
+                        insert into account (username, password, role, email, status)
+                        values (?, ?, 'U', ?, 'I');
 
                         insert into account_info (username)
                         values (?);

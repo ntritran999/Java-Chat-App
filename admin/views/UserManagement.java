@@ -118,7 +118,7 @@ public class UserManagement extends JPanel{
                 "Tên (A-Z)", "Tên (Z-A)", "Ngày tạo (Mới nhất)", "Ngày tạo (Cũ nhất)"
         });
 
-        sortCombo.setPreferredSize(new Dimension(130, 30));
+        sortCombo.setPreferredSize(new Dimension(100, 30));
         sortCombo.setFont(new Font("Arial", Font.PLAIN, 13));
         panel.add(filterLabel);
         panel.add(filterTypeCombo);

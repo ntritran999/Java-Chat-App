@@ -10,7 +10,7 @@ import admin.models.dbConnection;
 public class Main {
     public static void main(String[] args) throws SQLException {
         dbConnection.createConDB();
-        System.setProperty("sun.java2d.uiScale", "1.5");
+        System.setProperty("sun.java2d.uiScale", "1.0");
         SwingUtilities.invokeLater(() -> {
             UserController uc = new UserController(new UserModel(), new UserFrame());
             uc.useLoginPage();

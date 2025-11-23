@@ -13,7 +13,8 @@ import user.models.PersonSearchModel;
 import user.views.CreateGroupDialog;
 
 public class CreateGroupController {
-    public static void handleCreateGroup(Connection conn, CreateGroupDialog cgd, String admin, int firstMemId) {
+    public static boolean handleCreateGroup(Connection conn, CreateGroupDialog cgd, String admin, int firstMemId) {
+        var successfulWrapper = new Object(){ boolean successful = false; };
         HashSet<String> added = new HashSet<>();
         cgd.addToMemList(admin);
         added.add(admin);
@@ -71,6 +72,7 @@ public class CreateGroupController {
                     try {
                         AddGroupModel.createGroup(conn, groupName, cgd.getMemList(), admin);
                         JOptionPane.showMessageDialog(cgd, "Tạo nhóm thành công", "Thông báo tạo nhóm", JOptionPane.INFORMATION_MESSAGE);
+                        successfulWrapper.successful = true;
                     } catch (Exception e) {
                         System.out.println(e);
                         JOptionPane.showMessageDialog(cgd, "Tạo nhóm thất bại", "Thông báo tạo nhóm", JOptionPane.ERROR_MESSAGE);
@@ -86,5 +88,6 @@ public class CreateGroupController {
         });
         
         cgd.showCreateGroupDialog();
+        return successfulWrapper.successful;
     }
 }
