@@ -19,6 +19,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.GroupLayout;
+import javax.swing.JOptionPane;
 
 import com.github.lgooddatepicker.components.DatePicker;
 
@@ -233,4 +234,12 @@ public class SignupPage extends JPanel{
     public DatePicker getDateOfBirthPicker() {
         return dateOfBirthPicker;
     }
+
+    public void showSignUpFail(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Tình trạng đăng ký tài khoản", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showSignUpSuccess() {
+        JOptionPane.showMessageDialog(this, "Đăng ký tài khoản thành công", "Tình trạng đăng ký tài khoản", JOptionPane.INFORMATION_MESSAGE);
+    } 
 }

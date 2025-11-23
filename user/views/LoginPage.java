@@ -232,4 +232,8 @@ public class LoginPage extends JPanel {
     public void showResetSuccess() {
         JOptionPane.showMessageDialog(this, "Mật khẩu sẽ được gửi về email của bạn", "Reset thành công", JOptionPane.INFORMATION_MESSAGE);
     } 
+
+    public void showLoginFail(){
+        JOptionPane.showMessageDialog(this, "Tên đăng nhập hay mặt khẩu không đúng", "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
 }

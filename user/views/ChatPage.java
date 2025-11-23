@@ -579,4 +579,20 @@ public class ChatPage extends JPanel {
                                   options,
                                   options[0]);
     }
+
+    public void showUpdateInfoFail(){
+        JOptionPane.showMessageDialog(this, "Không cập nhật thông tin thành công", "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showUpdateInfoSuccess() {
+        JOptionPane.showMessageDialog(this, "Cập nhật thông tin thành công", "Reset thành công", JOptionPane.INFORMATION_MESSAGE);
+    } 
+
+    public void showUpdatePassFail(String msg){
+        JOptionPane.showMessageDialog(this, msg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showUpdatePassSuccess() {
+        JOptionPane.showMessageDialog(this, "Cập nhật mật khẩu thành công", "Reset thành công", JOptionPane.INFORMATION_MESSAGE);
+    } 
 }
