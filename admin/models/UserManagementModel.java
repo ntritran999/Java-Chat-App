@@ -338,7 +338,6 @@ public class UserManagementModel{
     }
 
     private static long findingIdByUserName(String username) throws SQLException{
-        System.out.println(2);
         if(username == null || username.trim().isEmpty())
             return -1;
         PreparedStatement st = null;
@@ -349,7 +348,6 @@ public class UserManagementModel{
         if(rs.next()){
             return rs.getLong(1) ;
         }
-        System.out.println(-2);
         return -1;
     }
 
@@ -361,8 +359,8 @@ public class UserManagementModel{
         PreparedStatement st = null;
         StringBuilder sql = new StringBuilder();
         sql.append( """
-                    insert into account (username, password, role, email) 
-                    values (?, ?, ?, ?);
+                    insert into account (username, password, role, email, status) 
+                    values (?, ?, ?, ?, 'I');
                 """);
 
         if(role.equals("U")){

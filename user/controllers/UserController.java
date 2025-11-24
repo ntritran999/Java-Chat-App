@@ -60,7 +60,14 @@ public class UserController {
                             });
                         }       
                         else if(isAuthen == 1) {
-                            useChatPage(lpModel.getUsername());
+                            String username = lpModel.getUsername();
+                            try {
+                                ActivitiesModel.setOnline(userModel.getConn(), username);
+                            }
+                            catch (Exception e) {
+                                System.out.println(e);
+                            }
+                            useChatPage(username);
                         } else{
                             lp.showLoginFail();
                         }
@@ -274,6 +281,11 @@ public class UserController {
 
         cp.addExitButtonEvent(e -> {
             if (cp.showLogoutWarning() == 0) {
+                try {
+                    ActivitiesModel.setOffline(userModel.getConn(), username);
+                } catch (Exception excep) {
+                    System.out.println(excep);
+                }
                 useLoginPage();
             }
         });
@@ -477,10 +489,13 @@ public class UserController {
                                     @Override
                                     public void mousePressed(MouseEvent me) {
                                         CreateGroupDialog createGroupDialog = userFrame.getCreateGroupDialog();
-                                        CreateGroupController.handleCreateGroup(userModel.getConn(), 
+                                        boolean successful = CreateGroupController.handleCreateGroup(userModel.getConn(), 
                                                                                 createGroupDialog, username, 
                                                                                 Integer.valueOf(map.get("id")));
-                                        loadConversations(cp, username);
+                                        
+                                        if (successful) {
+                                            loadConversations(cp, username);
+                                        }
                                     }
                                 };
                             }
