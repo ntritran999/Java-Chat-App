@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import admin.models.dbConnection;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -20,9 +19,9 @@ public class SignupModel {
     private String username;
     private String password;
 
-    private static Connection conn = dbConnection.getConnection();
+    private Connection conn;
 
-    public SignupModel(String fullName, String email, String gender, String dob, String address, String username, String password){
+    public SignupModel(Connection conn, String fullName, String email, String gender, String dob, String address, String username, String password){
         this.fullName = fullName;
         this.email = email;
         this.gender = gender;
@@ -30,6 +29,7 @@ public class SignupModel {
         this.address = address;
         this.username = username;
         this.password = password;
+        this.conn = conn;
     }
 
     public String getFullName(){

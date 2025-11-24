@@ -1,11 +1,6 @@
 package user.models;
 
 import java.sql.*;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.swing.SwingWorker;
 
 public class GroupSettingModel {
     public static void changeGroupName(Connection conn, int groupId, String newGroupName) throws SQLException {

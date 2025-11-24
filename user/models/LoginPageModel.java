@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import admin.models.dbConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,14 +17,17 @@ public class LoginPageModel {
     private String email;
     private int authen; // 0(loi hoac ko co account), 1(user), 2(admin) 
 
-    private static Connection conn = dbConnection.getConnection();
+    private Connection conn;
 
-    public LoginPageModel(String username, String password){
+    public LoginPageModel(Connection conn, String username, String password){
         this.username = username;
         this.password = password; 
+        this.conn = conn;
     }
 
-    public LoginPageModel(){}
+    public LoginPageModel(Connection conn){
+        this.conn = conn;
+    }
 
     public String getUsername(){
         return username;

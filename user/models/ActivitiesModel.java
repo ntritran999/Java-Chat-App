@@ -1,7 +1,7 @@
 package user.models;
 
 import java.sql.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class ActivitiesModel {
     public static void setOnline(Connection conn, String username) throws SQLException {
@@ -15,13 +15,13 @@ public class ActivitiesModel {
         st.execute();
 
         query = """
-                INSERT INTO activities (user_id, last_login_date)
+                INSERT INTO activities (user_id, last_login)
                 SELECT user_id, ?
                 FROM account_info
                 WHERE username=?
                 """;
         st = conn.prepareStatement(query);
-        st.setDate(1, Date.valueOf(LocalDate.now()));
+        st.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
         st.setString(2, username);
         st.execute();
         st.close();
