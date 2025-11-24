@@ -242,17 +242,17 @@ public class ChatPage extends JPanel {
 
     public class FriendRequestPanel extends JPanel {
         private IconButton addButton, declineButton;
-        private JLabel fullName;
+        private JLabel username;
 
-        public FriendRequestPanel(String fullName) {
+        public FriendRequestPanel(String username) {
             setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
             setPreferredSize(new Dimension(300, 50));
 
             JPanel textPanel = new JPanel();
             textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS));
-            this.fullName = new JLabel(fullName);
-            this.fullName.setFont(new Font("SansSerif", Font.BOLD, 24));
-            textPanel.add(this.fullName);
+            this.username = new JLabel(username);
+            this.username.setFont(new Font("SansSerif", Font.BOLD, 24));
+            textPanel.add(this.username);
 
             addButton = new IconButton("/assets/icons/yes-icon.png");
             declineButton = new IconButton("/assets/icons/no-icon.png");
@@ -273,7 +273,7 @@ public class ChatPage extends JPanel {
         }
 
         public JLabel getFullName() {
-            return fullName;
+            return username;
         }
     }
 
@@ -554,6 +554,10 @@ public class ChatPage extends JPanel {
 
     public void clearListPanel() {
         listPanel.removeAll();
+    }
+
+    public void removePanel(Component c){
+        listPanel.remove(c);
     }
 
     public void updateListPanel() {
