@@ -19,15 +19,16 @@ public class LoginHistoryController {
         lh = new LoginHistory();
         lhModel = null;
         isLoading = false;
-    }
-    public LoginHistory createLoginHistory() {
-        initLoginHistory();
         lh.addRefreshEvent(e -> {
             if (lh != null && !isLoading) {
                 isLoading = true;
                 refreshLoginHistory();
             }
         });
+    }
+    
+    public LoginHistory createLoginHistory() {
+        initLoginHistory();
         return lh;
     }
 

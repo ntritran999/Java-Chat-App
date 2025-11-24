@@ -1,3 +1,6 @@
+// https://tips4java.wordpress.com/2008/11/06/wrap-layout/
+// https://github.com/tips4java/tips4java/blob/main/source/WrapLayout.java
+
 package user.views;
 
 import java.awt.*;

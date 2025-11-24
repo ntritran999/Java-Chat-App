@@ -1,5 +1,4 @@
 package user.models;
-import admin.models.dbConnection;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -21,9 +20,9 @@ public class UpdateInfoDialogModel {
     private String newPassword;
     private String username;
 
-    private static Connection conn = dbConnection.getConnection();
+    private Connection conn;
 
-    public UpdateInfoDialogModel(String fullname, String gender, String dob, String address, String email, String newPassword, String username){
+    public UpdateInfoDialogModel(Connection conn, String fullname, String gender, String dob, String address, String email, String newPassword, String username){
         this.fullname = fullname;
         this.gender = gender;
         this.dob = dob;
@@ -31,11 +30,13 @@ public class UpdateInfoDialogModel {
         this.email = email;
         this.newPassword = newPassword;
         this.username = username;
+        this.conn = conn;
     }
 
-    public UpdateInfoDialogModel(String newPassword, String username){
+    public UpdateInfoDialogModel(Connection conn, String newPassword, String username){
         this.newPassword = newPassword;
         this.username = username;
+        this.conn = conn;
     }
 
     // hash function

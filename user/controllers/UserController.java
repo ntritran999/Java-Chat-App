@@ -14,7 +14,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 import admin.views.AdminDashboard;
 import user.models.*;
@@ -32,7 +31,7 @@ public class UserController {
 
     public void useLoginPage() {
         LoginPage lp = new LoginPage();
-        LoginPageModel lpModel = new LoginPageModel(null, null);
+        LoginPageModel lpModel = new LoginPageModel(userModel.getConn(), null, null);
         lp.addLoginButtonEvent(e -> {
             SwingWorker<Integer, Void> worker = new SwingWorker<Integer,Void>(){
                 @Override
@@ -85,7 +84,7 @@ public class UserController {
             // lp.showLogin();
             // lp.showResetFail("Sai tên đăng nhập.");
             SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean,Void>() {
-                LoginPageModel model = new LoginPageModel();
+                LoginPageModel model = new LoginPageModel(userModel.getConn());
                 @Override
                 protected Boolean doInBackground() throws SQLException{
                     String username = lp.getUsernameForReset().getText().trim();
@@ -144,7 +143,7 @@ public class UserController {
                     String confirmPassword = new String(sp.getConfirmPasswordField().getPassword());
                     if(!confirmPassword.equals(password))
                         return -3;
-                    SignupModel model = new SignupModel(fullName, email, gender, dob, address, username, password);
+                    SignupModel model = new SignupModel(userModel.getConn(), fullName, email, gender, dob, address, username, password);
                     return model.signUpAccount();
                 }
 
@@ -223,7 +222,7 @@ public class UserController {
                         dob = dateDOB.toString();
                     address = updateInfoDialog.getAddressTextArea().getText().trim();
                     email = updateInfoDialog.getEmailField().getText().trim();
-                    UpdateInfoDialogModel model = new UpdateInfoDialogModel(fullName, gender, dob, address, email, null, username);
+                    UpdateInfoDialogModel model = new UpdateInfoDialogModel(userModel.getConn(), fullName, gender, dob, address, email, null, username);
                     return model.updateInfoToDb();
                 }
 
@@ -253,7 +252,7 @@ public class UserController {
                     String newPasswordConfirm = new String(updateInfoDialog.getConfirmPasswordField().getPassword());
                     if(!newPasswordConfirm.equals(newPassword))
                         return -1;
-                    UpdateInfoDialogModel model = new UpdateInfoDialogModel(newPassword, username);
+                    UpdateInfoDialogModel model = new UpdateInfoDialogModel(userModel.getConn(), newPassword, username);
                     return model.updatePasswordToDb();
                 }
 
