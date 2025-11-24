@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
@@ -18,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import admin.views.AdminDashboard;
 import user.models.*;
 import user.views.*;
+import user.views.ChatPage.FriendRequestPanel;
 
 public class UserController {
     private UserModel userModel;
@@ -287,11 +289,81 @@ public class UserController {
                 useLoginPage();
             }
         });
-
+        
         cp.addInboxButtonEvent(e -> {
             cp.clearListPanel();
-            cp.addToListPanel(cp.createFriendRequestPanel("Some stranger"));
-            cp.updateListPanel();
+            SwingWorker<List<String>, Void> worker = new SwingWorker<List<String>,Void>() {
+                @Override
+                protected List<String> doInBackground() throws SQLException{
+                    FriendRequestModel model = new FriendRequestModel(username);
+                    return model.fetchingFriendRequest();
+                }
+
+                @Override 
+                protected void done(){
+                    try{
+                        List<String> arr = get();
+                        for(var ob : arr){
+                            JPanel friend = cp.createFriendRequestPanel(ob);
+                            ((FriendRequestPanel) friend).addAddButtonEvent(e-> {
+                                SwingWorker<Boolean, Void> worker1 = new SwingWorker<Boolean, Void>(){
+                                    @Override 
+                                    protected Boolean doInBackground() throws SQLException{
+                                        FriendRequestModel model = new FriendRequestModel(username, ob);
+                                        return model.updateAcceptedToDb();
+                                    }
+
+                                    @Override 
+                                    protected void done(){
+                                        boolean success;
+                                        try {
+                                            success = get();
+                                            if(success){
+                                                cp.removePanel(friend);
+                                                cp.updateListPanel();
+                                            }
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                };
+                                    worker1.execute();
+                            });
+                                
+                            ((FriendRequestPanel) friend).addDeclineButtonEvent(e-> {
+                            SwingWorker<Boolean, Void> worker2 = new SwingWorker<Boolean, Void>(){
+                                @Override 
+                                protected Boolean doInBackground() throws SQLException{
+                                    FriendRequestModel model = new FriendRequestModel(username, ob);
+                                    return model.updateDeclineToDb();
+                                }
+
+                                @Override 
+                                protected void done(){
+                                    boolean success;
+                                    try {
+                                        success = get();
+                                        if(success){
+                                            cp.removePanel(friend);
+                                            cp.updateListPanel();
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            };
+                            worker2.execute();
+                        });
+                            //friend.addDeclineButtonEvent(declineReq());
+                            cp.addToListPanel(friend);
+                        }
+                        cp.updateListPanel();
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            };
+            worker.execute();
         });
 
         cp.addListButtonEvent(e -> {
