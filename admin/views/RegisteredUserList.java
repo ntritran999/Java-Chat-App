@@ -146,18 +146,6 @@ public class RegisteredUserList extends JPanel{
                 return false;
             }
         };
-
-        // Thêm dữ liệu mẫu vào tableModel
-        for (int i = 1; i <= 50; i++) { // Thêm 50 hàng dữ liệu
-            Object[] rowData = {
-                "user" + i,                 // Tên đăng nhập
-                "Họ Tên " + i,              // Họ tên
-                "user" + i + "@example.com",// Email
-                "01/01/2023",               // Ngày tạo
-                (i % 2 == 0) ? "Hoạt động" : "Bị khóa" // Trạng thái
-            };
-            tableModel.addRow(rowData);
-        }
         
         userTable = new JTable(tableModel);
         userTable.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -181,4 +169,37 @@ public class RegisteredUserList extends JPanel{
         
         return scrollPane;
     }
+
+    public JButton getButtonFilterDate() {
+        return buttonFilterDate;
+    }
+
+    public DatePicker getStartDatePicker() {
+        return startDatePicker;
+    }
+
+    public DatePicker getEndDatePicker() {
+        return endDatePicker;
+    }
+
+    public JButton getBtnSearch() {
+        return btnSearch;
+    }
+
+    public JTextField getSearchField() {
+        return searchField;
+    }
+
+    public JComboBox<String> getSortCombo() {
+        return sortCombo;
+    }
+
+    public DefaultTableModel getTableModel() {
+        return tableModel;
+    }
+
+    public JTable getUserTable(){
+        return userTable;
+    }
+
 }

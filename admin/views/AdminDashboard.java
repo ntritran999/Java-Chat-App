@@ -154,15 +154,21 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Biểu đồ số lượng người hoạt động theo năm":
                         contentPanel.removeAll();
-                        contentPanel.add(new ActiveUsersChart());
+                        ActiveUsersChart viewActiveUsersChart = new ActiveUsersChart();
+                        new ChartManagementController(viewActiveUsersChart);
+                        contentPanel.add(viewActiveUsersChart);
                         break;
                     case "Biểu đồ số lượng người đăng ký mới theo năm":
                         contentPanel.removeAll();
-                        contentPanel.add(new RegisteredUserChart());
+                        RegisteredUserChart viewRegisteredUserChart = new RegisteredUserChart();
+                        new ChartManagementController(viewRegisteredUserChart);
+                        contentPanel.add(viewRegisteredUserChart);
                         break;
                     case "Danh sách người dùng đăng ký mới":
                         contentPanel.removeAll();
-                        contentPanel.add(new RegisteredUserList());
+                        RegisteredUserList viewRegisteredUserList = new RegisteredUserList();
+                        new RegisteredUserListController(viewRegisteredUserList);
+                        contentPanel.add(viewRegisteredUserList);
                         break;
                     case "Danh sách người dùng và số lượng bạn bè":
                         contentPanel.removeAll();

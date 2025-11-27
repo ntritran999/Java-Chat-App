@@ -7,7 +7,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
 import java.time.LocalDate;
-import java.util.*;
+
 
 public class ActiveUsersList extends JPanel{
     private JTable userTable;
