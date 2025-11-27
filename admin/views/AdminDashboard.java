@@ -183,7 +183,9 @@ public class AdminDashboard extends JFrame{
                         break;
                     case "Danh sách người dùng hoạt động":
                         contentPanel.removeAll();
-                        contentPanel.add(new ActiveUsersList());
+                        ActiveUsersList viewActiveUsersList = new ActiveUsersList();
+                        new ActiveUsersListController(viewActiveUsersList);
+                        contentPanel.add(viewActiveUsersList);
                         break;
                     case "Danh sách các nhóm chat":
                         contentPanel.removeAll();

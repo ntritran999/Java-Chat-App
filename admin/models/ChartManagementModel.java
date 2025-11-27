@@ -61,8 +61,9 @@ public class ChartManagementModel {
                     peakValue = i + 1;
                 }
             }
-            avgValue = totalValue / 12;
-            avgValue = (double) (Math.round(avgValue*10.0)/10.0); // lam tron 2 so thap phan
+            avgValue = ((totalValue*1.0) / (12*1.0));
+            avgValue = (double) (Math.round(avgValue*10.0)/10.0); // lam tron 1 so thap phan
+
         }
 
         if(st != null)
@@ -107,8 +108,8 @@ public class ChartManagementModel {
                     peakValue = i + 1;
                 }
             }
-            avgValue = totalValue / 12;
-            avgValue = (double) (Math.round(avgValue*10.0)/10.0); // lam tron 2 so thap phan
+            avgValue = ((totalValue*1.0) / (12*1.0));
+            avgValue = (double) (Math.round(avgValue*10.0)/10.0); // lam tron 1 so thap phan
         }
 
         if(st != null)

@@ -32,7 +32,6 @@ public class ActiveUsersList extends JPanel{
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         initComponents();
-        loadSampleData();
     }
 
     private void initComponents(){
@@ -127,10 +126,10 @@ public class ActiveUsersList extends JPanel{
         sortLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         
         sortCombo = new JComboBox<>(new String[]{
-            "Thời gian (Mới nhất)",
-            "Thời gian (Cũ nhất)",
             "Tên đăng nhập (A-Z)",
-            "Tên đăng nhập (Z-A)"
+            "Tên đăng nhập (Z-A)",
+            "Thời gian (Mới nhất)",
+            "Thời gian (Cũ nhất)"
         });
         sortCombo.setPreferredSize(new Dimension(220, 30));
         sortCombo.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -241,25 +240,52 @@ public class ActiveUsersList extends JPanel{
 
         return scrollPane;
     }
+    
+    public JTable getUserTable(){
+        return userTable;
+    }
 
-    private void loadSampleData() {
-        Object[][] data = {
-            {1, "user001", 120, 15, 5},
-            {2, "user002", 98, 10, 4},
-            {3, "user003", 76, 8, 3},
-            {4, "user004", 142, 18, 6},
-            {5, "user005", 160, 20, 7},
-            {6, "user006", 54, 5, 2},
-            {7, "user007", 115, 12, 5},
-            {8, "user008", 134, 16, 6},
-            {9, "user009", 68, 7, 3},
-            {10, "user010", 150, 19, 6},
-            {11, "user011", 82, 9, 3},
-            {12, "user012", 127, 14, 5}
-        };
-        
-        for (Object[] row : data) {
-            tableModel.addRow(row);
-        }
+    public DefaultTableModel getDefaultTableModel(){
+        return tableModel;
+    }
+
+    public JTextField getSearchField(){
+        return searchField;
+    }
+
+    public JComboBox<String> getSortCombo(){
+        return sortCombo;
+    }
+
+    public DatePicker getStartDatePicker(){
+        return startDatePicker;
+    }
+
+    public DatePicker getEnDatePicker(){
+        return endDatePicker;
+    }
+
+    public JButton getButtonSearchName(){
+        return buttonSearchName;
+    }
+
+    public JButton getButtonFilterDate(){
+        return buttonFilterDate;
+    }
+    
+    public JComboBox<String> getFilterOperator(){
+        return filterOperator;
+    }
+
+    public JTextField getActionCounTextField(){
+        return actionCountField;
+    }
+
+    public JButton getButtonFilter(){
+        return buttonFilter;
+    }
+
+    public JButton getButtonClearFilter(){
+        return buttonClearFilter;
     }
 }
