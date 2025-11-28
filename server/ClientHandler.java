@@ -60,6 +60,7 @@ public class ClientHandler implements Runnable {
                     JSONObject res = new JSONObject();
                     res.put("content", msg.getString("content"));
                     res.put("sender_id", msg.getInt("sender_id"));
+                    res.put("msg_id", msg.getInt("msgId"));
                     handler.writer.write(res.toString());
                     handler.writer.newLine();
                     handler.writer.flush();

@@ -5,7 +5,6 @@ import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.Scanner;
 
 import org.json.JSONObject;
 
@@ -75,13 +74,14 @@ public class ChatClient {
         return userId > 0 && receiverId > 0 && !msgType.isEmpty();
     }
 
-    public void sendMessage(String msg) {
+    public void sendMessage(String msg, int msgId) {
         try {
             JSONObject data = new JSONObject();
             data.put("content", msg);
             data.put("sender_id", userId);
             data.put("receiver_id", receiverId);
             data.put("type", msgType);
+            data.put("msgId", msgId);
 
             writer.write(data.toString());
             writer.newLine();
@@ -136,16 +136,5 @@ public class ChatClient {
 
     public String getMsgType() {
         return msgType;
-    }
-
-    public static void main(String[] args) {
-        ChatClient client = new ChatClient();
-        client.initClient(2, 24, "single");
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.print("Enter msg: ");
-            String msg = scanner.nextLine();
-            client.sendMessage(msg);
-        }
     }
 }
