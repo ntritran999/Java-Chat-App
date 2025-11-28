@@ -16,6 +16,7 @@ import javax.swing.SwingWorker;
 import java.util.*;
 
 import admin.views.AdminDashboard;
+import server.ChatClient;
 import user.models.*;
 import user.views.*;
 import user.views.ChatPage.FriendRequestPanel;
@@ -23,6 +24,7 @@ import user.views.ChatPage.FriendRequestPanel;
 public class UserController {
     private UserModel userModel;
     private UserFrame userFrame;
+    private ChatClient client;
     
     public UserController(UserModel userModel, UserFrame userFrame) {
         this.userModel = userModel;
@@ -194,10 +196,6 @@ public class UserController {
 
         loadConversations(cp, username);
 
-        cp.addToChatPanel(cp.createChatLinePanel("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.", true));
-        cp.addToChatPanel(cp.createChatLinePanel("Wow, that's a lot of text.", false));
-        cp.addToChatPanel(cp.createChatLinePanel("I know right", true));
-
         cp.addSettingButtonEvent(e -> {
             updateInfoDialog.showUpdateInfoDialog();
         });
@@ -285,6 +283,8 @@ public class UserController {
                 } catch (Exception excep) {
                     System.out.println(excep);
                 }
+                if (client != null)
+                    client.disconnectClient();
                 useLoginPage();
             }
         });
@@ -375,9 +375,19 @@ public class UserController {
 
         cp.addSendButtonEvent(e -> {
             String msg = cp.getMessageArea().getText();
-            if (!msg.isEmpty()) {
+            if (!msg.isEmpty() && client != null && client.isInitialized()) {
                 cp.emptyMessage();
                 cp.addToChatPanel(cp.createChatLinePanel(msg, true));
+                client.sendMessage(msg);
+                new SwingWorker<Void,Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        int receiver = client.getReceiver();
+                        ChatModel cm = new ChatModel(userModel.getConn(), username, receiver, client.getMsgType());
+                        cm.saveChat(msg);
+                        return null;
+                    }
+                }.execute();
             }
         });
 
@@ -421,11 +431,65 @@ public class UserController {
             loadAddFriendSearchResult(cp, addFriendSearchDialog, username);
         });
 
+        userFrame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() {
+                        try {
+                            ActivitiesModel.setOffline(userModel.getConn(), username);
+                        } catch (Exception excep) {
+                            System.out.println(excep);
+                        }
+                        return null;
+                    }
+                }.execute();
+                if (client != null)
+                    client.disconnectClient();
+            }
+        });
+
         userFrame.updateUserFrame(cp);
     }
 
-    private void openChat() {
-        JOptionPane.showMessageDialog(null, "Hello");
+    private void openChat(ChatPage cp, String username, int otherId, String type) {
+        new SwingWorker<ChatModel, Void>() {
+            @Override
+            protected ChatModel doInBackground() throws Exception {
+                return new ChatModel(userModel.getConn(), username, otherId, type);
+            }
+            @Override
+            protected void done() {
+                try {
+                    cp.clearChatPanel();
+                    ChatModel chatModel = get();
+                    ArrayList<HashMap<String, String>> list = chatModel.getChatHistory();
+                    int userId = chatModel.getUserId();
+                    for (var map: list) {
+                        boolean isSender = Integer.valueOf(map.get("sender")) == userId;
+                        cp.addToChatPanel(cp.createChatLinePanel(map.get("content"), isSender));
+                    }
+    
+                    if (client != null) 
+                        client.disconnectClient();
+    
+                    client = new ChatClient();
+                    client.initClient(chatModel.findUserId(username), otherId, "single");
+                    client.addMsgHandler(msg -> {
+                        if (msg.getInt("sender_id") == otherId) {
+                            ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), false);
+                            cp.addToChatPanel(chatLine);
+                        }
+                    });
+                    client.listen();
+    
+                    cp.updateChatPanel();
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+        }.execute();
     }
 
     private void loadOnlineFriends(ChatPage cp, String username) {
@@ -444,18 +508,20 @@ public class UserController {
                         ChatPage.FriendPanel fp = cp.createFriendPanel(map.get("fullname"), "Online", new MouseAdapter() {
                             @Override
                             public void mousePressed(MouseEvent me) {
-                                openChat();
+                                // openChat();
                             }
                         });
                         fp.addReportButtonEvent(ev -> {
+                            if(cp.showReportWarning() == 0) {
+                                new SwingWorker<Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground() {
+                                        SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
+                                        return null;
+                                    }
+                                }.execute();
+                            }
                             SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
-                            new SwingWorker<Void, Void>() {
-                                @Override
-                                protected Void doInBackground() {
-                                    SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
-                                    return null;
-                                }
-                            }.execute();
                         });
                         cp.addToListPanel(fp);
                     }
@@ -483,14 +549,14 @@ public class UserController {
                         sd.clearListPanel();
                         for (var map : list) {
                             MouseAdapter ma = null;
+                            int id = Integer.valueOf(map.get("id"));
                             if (type == "group") {
                                 ma = new MouseAdapter() {
                                     @Override
                                     public void mousePressed(MouseEvent me) {
                                         CreateGroupDialog createGroupDialog = userFrame.getCreateGroupDialog();
                                         boolean successful = CreateGroupController.handleCreateGroup(userModel.getConn(), 
-                                                                                createGroupDialog, username, 
-                                                                                Integer.valueOf(map.get("id")));
+                                                                                createGroupDialog, username, id);
                                         
                                         if (successful) {
                                             loadConversations(cp, username);
@@ -502,7 +568,9 @@ public class UserController {
                                 ma = new MouseAdapter() {
                                     @Override
                                     public void mousePressed(MouseEvent me) {
-                                        JOptionPane.showMessageDialog(null, "Hello");
+                                        sd.dispose();
+                                        cp.setChatName(map.get("name"));
+                                        openChat(cp, username, id, "single");
                                     }
                                 };
                             }
@@ -538,7 +606,7 @@ public class UserController {
                                     ChatPage.FriendPanel fp = cp.createFriendPanel(name, status, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
-                                            openChat();
+                                            // openChat();
                                         }
                                     });
                                     cp.addToListPanel(fp);
@@ -547,7 +615,19 @@ public class UserController {
                                     ChatPage.PersonPanel pp = cp.createPersonPanel(name, status, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
-                                            openChat();
+                                            cp.setChatName(name);
+                                            openChat(cp, username, id, "single");
+                                        }
+                                    });
+                                    pp.addReportButtonEvent(ev -> {
+                                        if (cp.showReportWarning() == 0) {
+                                            new SwingWorker<Void, Void>() {
+                                                @Override
+                                                protected Void doInBackground() {
+                                                    SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
+                                                    return null;
+                                                }
+                                            }.execute();
                                         }
                                     });
                                     cp.addToListPanel(pp);
@@ -556,7 +636,7 @@ public class UserController {
                                     ChatPage.GroupPanel gp = cp.createGroupPanel(name, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
-                                            openChat();
+                                            // openChat();
                                         }
                                     });
                                     gp.addGroupSettingButtonEvent(e -> {
@@ -571,6 +651,14 @@ public class UserController {
                             }
                         }
                         cp.updateListPanel();
+                        if (!list.isEmpty()) {
+                            HashMap<String, String> firstEntry = list.get(0);
+                            String name = firstEntry.get("name");
+                            int otherId = Integer.valueOf(firstEntry.get("id"));
+                            String msgType = (firstEntry.get("type").equals("group")) ? "multiple" : "single";
+                            cp.setChatName(name);
+                            openChat(cp, username, otherId, msgType);
+                        }
 
                     } catch (Exception e) {
                         System.out.println(e);

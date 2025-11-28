@@ -75,6 +75,12 @@ public class ConversationModel {
                 id = rs.getString("id");
                 name = rs.getString("name");
                 status = rs.getString("status");
+                if (status.equals("A")) {
+                    status = "Online";
+                }
+                else {
+                    status = "Offline";
+                }
                 type = rs.getString("type");
 
                 HashMap<String, String> row = new HashMap<>();

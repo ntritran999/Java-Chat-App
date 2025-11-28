@@ -17,10 +17,11 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-
+import javax.swing.JScrollBar;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
@@ -53,11 +54,9 @@ public class ChatPage extends JPanel {
                     BorderFactory.createEmptyBorder(5, 5, 5, 5)));
             msg.setBackground(new Color(bgColorDark));
 
-            int maxWidth = 400;
-            msg.setSize(new Dimension(maxWidth, Integer.MAX_VALUE));
-            Dimension d = msg.getPreferredSize();
-            msg.setPreferredSize(d);
-            msg.setMaximumSize(new Dimension(maxWidth, d.height));
+            int maxColumn = 30;
+            int columns = Math.min(maxColumn, text.length());
+            msg.setColumns(columns);
 
             add(msg);
             msg.addMouseListener(new MouseAdapter() {
@@ -75,6 +74,13 @@ public class ChatPage extends JPanel {
                                                 options[0]);
                     }
                 }
+            });
+
+            centerChatPanel.revalidate();
+            centerChatPanel.repaint();
+            SwingUtilities.invokeLater(() -> {
+                JScrollBar vertical = centerScrollPane.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
             });
         }
     }
@@ -283,6 +289,8 @@ public class ChatPage extends JPanel {
             sendButton, deleteAllHistoryButton, chatSuggestionButtton, msgListButton, addFriendButton;
     private JButton findButton, findAllButton;
     private JPanel listPanel, centerChatPanel, topChatPanel;
+    private JScrollPane centerScrollPane;
+    private JLabel chatName;
 
     public ChatPage() {
         setLayout(new BorderLayout());
@@ -399,7 +407,7 @@ public class ChatPage extends JPanel {
 
         centerChatPanel = new JPanel();
         centerChatPanel.setLayout(new BoxLayout(centerChatPanel, BoxLayout.PAGE_AXIS));
-        JScrollPane centerScrollPane = new JScrollPane(centerChatPanel);
+        centerScrollPane = new JScrollPane(centerChatPanel);
         JPanel bottomChatPanel = new JPanel();
         JPanel topChatPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
 
@@ -423,6 +431,16 @@ public class ChatPage extends JPanel {
         topChatPanel.add(chatSearchField);
         topChatPanel.add(searchBtn);
         topChatPanel.add(deleteAllHistoryButton);
+
+        chatName = new JLabel();
+        chatName.setFont(new Font("SansSerif", Font.BOLD, 16));
+        JPanel chatNamePanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+        chatNamePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        chatNamePanel.add(chatName);
+        topChatPanel.add(chatNamePanel, 0);
+        JSeparator separator = new JSeparator(JSeparator.VERTICAL);
+        separator.setPreferredSize(new Dimension(10, 30));
+        topChatPanel.add(separator, 1);
 
         messageTextArea = new JTextArea();
         messageTextArea.setLineWrap(true);
@@ -572,16 +590,33 @@ public class ChatPage extends JPanel {
         centerChatPanel.repaint();
     }
 
-    public int showLogoutWarning() {
+    public void clearChatPanel() {
+        centerChatPanel.removeAll();
+    }
+
+    public void updateChatPanel() {
+        centerChatPanel.revalidate();
+        centerChatPanel.repaint();
+    }
+
+    private int showWarning(String title) {
         Object[] options = { "Có", "Không" };
         return JOptionPane.showOptionDialog(this, 
                                 "Bạn có chắc chắn không", 
-                                  "Đăng xuất",
+                                  title,
                                   JOptionPane.YES_NO_OPTION,
                                   JOptionPane.WARNING_MESSAGE,
                                   null,
                                   options,
                                   options[0]);
+    }
+
+    public int showLogoutWarning() {
+        return showWarning("Đăng xuất");
+    }
+
+    public int showReportWarning() {
+        return showWarning("Report chat");
     }
 
     public void showUpdateInfoFail(){
@@ -598,5 +633,9 @@ public class ChatPage extends JPanel {
 
     public void showUpdatePassSuccess() {
         JOptionPane.showMessageDialog(this, "Cập nhật mật khẩu thành công", "Reset thành công", JOptionPane.INFORMATION_MESSAGE);
+    } 
+
+    public void setChatName(String name) {
+        chatName.setText(name);
     } 
 }
