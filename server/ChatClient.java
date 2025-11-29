@@ -62,7 +62,12 @@ public class ChatClient {
         this.receiverId = receiverId;
         this.msgType = msgType;
         try {
-            writer.write(String.valueOf(this.userId));
+            JSONObject init = new JSONObject();
+            init.put("user_id", this.userId);
+            if (msgType.equals("multiple")) {
+                init.put("group_id", this.receiverId);
+            }
+            writer.write(init.toString());
             writer.newLine();
             writer.flush();
         } catch (Exception e) {
@@ -74,7 +79,7 @@ public class ChatClient {
         return userId > 0 && receiverId > 0 && !msgType.isEmpty();
     }
 
-    public void sendMessage(String msg, int msgId) {
+    public void sendMessage(String username, String msg, int msgId) {
         try {
             JSONObject data = new JSONObject();
             data.put("content", msg);
@@ -82,6 +87,7 @@ public class ChatClient {
             data.put("receiver_id", receiverId);
             data.put("type", msgType);
             data.put("msgId", msgId);
+            data.put("username", username);
 
             writer.write(data.toString());
             writer.newLine();

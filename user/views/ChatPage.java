@@ -8,8 +8,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.Box;
@@ -79,6 +77,13 @@ public class ChatPage extends JPanel {
         }
         public void addDeleteEvent(MouseListener ml) {
             msg.addMouseListener(ml);
+        }
+        public void addSenderName(String name) {
+            if (name != null) {
+                JLabel nameLabel = new JLabel(name);
+                nameLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+                add(nameLabel, 0);
+            }
         }
     }
 

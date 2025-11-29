@@ -13,6 +13,7 @@ public class ClientHandler implements Runnable {
     private static ArrayList<ClientHandler> handlers = new ArrayList<>();
     private Socket socket;
     private int userId;
+    private int groupId = -1;
     private BufferedWriter writer;
     private BufferedReader reader;
 
@@ -26,7 +27,11 @@ public class ClientHandler implements Runnable {
                 closeHanlder();
                 return;
             }
-            userId = Integer.valueOf(line);
+            JSONObject initInfo = new JSONObject(line);
+            userId = initInfo.getInt("user_id");
+            if (initInfo.has("group_id")) {
+                groupId = initInfo.getInt("group_id");
+            }
             handlers.add(this);
             broadCastStatus();
         } catch (Exception e) {
@@ -44,7 +49,12 @@ public class ClientHandler implements Runnable {
                     break;
                 }
                 JSONObject msg = new JSONObject(line);
-                forwardMsg(msg);
+                if (msg.getString("type").equals("single")) {
+                    forwardMsg(msg);
+                }
+                else {
+                    broadCastMsg(msg);
+                }
                 
             } catch (Exception e) {
                 closeHanlder();
@@ -53,7 +63,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public void forwardMsg(JSONObject msg) {
+    private void forwardMsg(JSONObject msg) {
         for (var handler: handlers) {
             try {
                 int receiverId = msg.getInt("receiver_id");
@@ -62,6 +72,26 @@ public class ClientHandler implements Runnable {
                     res.put("content", msg.getString("content"));
                     res.put("sender_id", msg.getInt("sender_id"));
                     res.put("msg_id", msg.getInt("msgId"));
+                    handler.writer.write(res.toString());
+                    handler.writer.newLine();
+                    handler.writer.flush();
+                }
+            } catch (Exception e) {
+                closeHanlder();
+            }
+        }
+    }
+
+    private void broadCastMsg(JSONObject msg) {
+        for (var handler: handlers) {
+            try {
+                int groupId = msg.getInt("receiver_id");
+                if (handler.groupId == groupId && handler.userId != msg.getInt("sender_id")) {
+                    JSONObject res = new JSONObject();
+                    res.put("content", msg.getString("content"));
+                    res.put("msg_id", msg.getInt("msgId"));
+                    res.put("group_id", groupId);
+                    res.put("sender_name", msg.getString("username"));
                     handler.writer.write(res.toString());
                     handler.writer.newLine();
                     handler.writer.flush();

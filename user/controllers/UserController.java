@@ -387,21 +387,26 @@ public class UserController {
             String msg = cp.getMessageArea().getText();
             if (!msg.isEmpty() && client != null && client.isInitialized()) {
                 int receiver = client.getReceiver();
-                ChatModel cm = new ChatModel(userModel.getConn(), username, receiver, client.getMsgType());
+                String msgType = client.getMsgType();
+                ChatModel cm = new ChatModel(userModel.getConn(), username, receiver, msgType);
                 new SwingWorker<Integer,Void>() {
                     @Override
                     protected Integer doInBackground() throws Exception {
-                        return cm.saveChat(msg);
+                        if (msgType.equals("single"))
+                            return cm.saveSingleChat(msg);
+                        return cm.saveGroupChat(msg, receiver);
                     }
                     @Override
                     protected void done() {
                         try {
                             int msgId = get();
-                            cp.emptyMessage();
-                            ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg, true, msgId);
-                            cp.addToChatPanel(chatLine);
-                            addDeleteChatLineEvent(chatLine, cm, cp, msgId, username, receiver, client.getMsgType());
-                            client.sendMessage(msg, msgId);
+                            if (msgId != -1) {
+                                cp.emptyMessage();
+                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg, true, msgId);
+                                cp.addToChatPanel(chatLine);
+                                addDeleteChatLineEvent(chatLine, cm, cp, msgId, username, receiver, msgType);
+                                client.sendMessage(username, msg, msgId);
+                            }
                         } catch (Exception e) {
                             System.out.println(e);
                         }
@@ -548,75 +553,85 @@ public class UserController {
     }
 
     private SwingWorker<ChatModel, Void> openChat(ChatPage cp, String username, int otherId, String type) {
-        if (type.equals("single")) {
-            SwingWorker<ChatModel, Void> worker = new SwingWorker<ChatModel, Void>() {
-                @Override
-                protected ChatModel doInBackground() throws Exception {
-                    return new ChatModel(userModel.getConn(), username, otherId, type);
-                }
-                @Override
-                protected void done() {
-                    try {
-                        cp.clearChatPanel();
-                        ChatModel chatModel = get();
-                        ArrayList<HashMap<String, String>> list = chatModel.getChatHistory();
-                        int userId = chatModel.getUserId();
-                        for (var map: list) {
-                            boolean isSender = Integer.valueOf(map.get("sender")) == userId;
-                            int msgId = Integer.valueOf(map.get("msgId"));
-                            ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(map.get("content"), isSender, msgId);
-                            cp.addToChatPanel(chatLine);
-                            if (isSender) {
-                                addDeleteChatLineEvent(chatLine, chatModel, cp, msgId, username, otherId, type);
+        SwingWorker<ChatModel, Void> worker = new SwingWorker<ChatModel, Void>() {
+            @Override
+            protected ChatModel doInBackground() throws Exception {
+                return new ChatModel(userModel.getConn(), username, otherId, type);
+            }
+            @Override
+            protected void done() {
+                try {
+                    cp.clearChatPanel();
+                    ChatModel chatModel = get();
+                    ArrayList<HashMap<String, String>> list = chatModel.getChatHistory();
+                    int userId = chatModel.getUserId();
+                    for (var map: list) {
+                        boolean isSender = Integer.valueOf(map.get("sender")) == userId;
+                        int msgId = Integer.valueOf(map.get("msgId"));
+                        ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(map.get("content"), isSender, msgId);
+                        if (isSender) {
+                            addDeleteChatLineEvent(chatLine, chatModel, cp, msgId, username, otherId, type);
+                        }
+                        else {
+                            chatLine.addSenderName(map.get("sender_name"));
+                        }
+                        cp.addToChatPanel(chatLine);
+                    }
+    
+                    if (client != null) 
+                    client.disconnectClient();
+
+                    client = new ChatClient();
+                    client.initClient(userId, otherId, type);
+                    client.addMsgHandler(msg -> {
+                        if (msg.has("status")) {
+                            int id = msg.getInt("id");
+                            new SwingWorker<Boolean, Void>() {
+                                @Override
+                                protected Boolean doInBackground() {
+                                    return new ConversationModel(userModel.getConn(), username).isIdInConversations(id);
+                                }
+                                @Override
+                                protected void done() {
+                                    try {
+                                        if (get()) {
+                                            loadConversations(cp, username, true);
+                                        }
+                                    } catch (Exception ex) {
+                                        System.out.println(ex);
+                                    }
+                                }
+                            }.execute();
+                        }
+                        else if (msg.has("group_id")) {
+                            if (msg.getInt("group_id") == otherId) {
+                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
+                                                                            false, 
+                                                                                    msg.getInt("msg_id"));
+                                chatLine.addSenderName(msg.getString("sender_name"));
+                                cp.addToChatPanel(chatLine);
                             }
                         }
-        
-                        if (client != null) 
-                            client.disconnectClient();
-        
-                        client = new ChatClient();
-                        client.initClient(chatModel.findUserId(username), otherId, "single");
-                        client.addMsgHandler(msg -> {
-                            if (msg.has("status")) {
-                                int id = msg.getInt("id");
-                                new SwingWorker<Boolean, Void>() {
-                                    @Override
-                                    protected Boolean doInBackground() {
-                                        return new ConversationModel(userModel.getConn(), username).isIdInConversations(id);
-                                    }
-                                    @Override
-                                    protected void done() {
-                                        try {
-                                            if (get()) {
-                                                loadConversations(cp, username, true);
-                                            }
-                                        } catch (Exception ex) {
-                                            System.out.println(ex);
-                                        }
-                                    }
-                                }.execute();
+                        else {
+                            if (msg.getInt("sender_id") == otherId) {
+                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
+                                                                                false, 
+                                                                                        msg.getInt("msg_id"));
+                                cp.addToChatPanel(chatLine);
                             }
-                            else {
-                                if (msg.getInt("sender_id") == otherId) {
-                                    ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
-                                                                                    false, 
-                                                                                            msg.getInt("msg_id"));
-                                    cp.addToChatPanel(chatLine);
-                                }
-                            }
-                        });
-                        client.listen();
-        
-                        cp.updateChatPanel();
-                    } catch (Exception e) {
-                        System.out.println(e);
-                    }
+                        }
+                    });
+
+                    client.listen();
+    
+                    cp.updateChatPanel();
+                } catch (Exception e) {
+                    System.out.println(e);
                 }
-            };
-            worker.execute();
-            return worker;
-        }
-        return null;
+            }
+        };
+        worker.execute();
+        return worker;
     }
 
     private void loadOnlineFriends(ChatPage cp, String username) {
@@ -765,7 +780,8 @@ public class UserController {
                                     ChatPage.GroupPanel gp = cp.createGroupPanel(name, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
-                                            // openChat();
+                                            cp.setChatName(name);
+                                            openChat(cp, username, id, "multiple");
                                         }
                                     });
                                     gp.addGroupSettingButtonEvent(e -> {

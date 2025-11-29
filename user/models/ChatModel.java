@@ -15,12 +15,10 @@ public class ChatModel {
         receiver = otherId;
         chatHistory = new ArrayList<>();
 
-        if (type == "single") {
-            loadChatHistory();
-        }
+        loadChatHistory(type);
     }
 
-    public int findUserId(String username) {
+    private int findUserId(String username) {
         int id = -1;
         try {
             String query = """
@@ -48,32 +46,68 @@ public class ChatModel {
         return userId;
     }
 
-    private void loadChatHistory() {
+    private void loadChatHistory(String type) {
         try {
             chatHistory.clear();
-            String query = """
-                    SELECT messages.id, content, seen, sender 
-                    FROM message_user mu1
-                    JOIN message_user mu2 ON mu2.message_id=mu1.message_id
-                    JOIN messages ON messages.id = mu1.message_id
-                    WHERE mu1.user_id=? AND mu2.user_id=? AND mu1.group_id IS NULL
+            String query;
+            if (type.equals("single")) {
+                query = """
+                        SELECT messages.id, content, seen, sender 
+                        FROM message_user mu1
+                        JOIN message_user mu2 ON mu2.message_id=mu1.message_id
+                        JOIN messages ON messages.id = mu1.message_id
+                        WHERE mu1.user_id=? AND mu2.user_id=? AND mu1.group_id IS NULL
+                        ORDER by messages.id
+                        """;
+                
+            }
+            else {
+                query = """
+                    SELECT messages.id, content, seen, sender, fullname
+                    FROM message_user mu
+                    JOIN messages ON messages.id=mu.message_id
+                    JOIN user_info ON user_info.id=messages.sender
+                    WHERE mu.user_id=? AND mu.group_id=?
+                    ORDER by messages.id
                     """;
+            }
             PreparedStatement st = conn.prepareStatement(query);
             st.setInt(1, userId);
             st.setInt(2, receiver);
             ResultSet rs = st.executeQuery();
-            String msgId, content, seen, sender;
+            String msgId, content, senderName;
+            boolean seen;
+            int sender;
             while (rs.next()) {
                 msgId = rs.getString("id");
                 content = rs.getString("content");
-                seen = rs.getBoolean("seen") ? "seen" : "unseen";
-                sender = String.valueOf(rs.getInt("sender"));
+                seen = rs.getBoolean("seen") ;
+                sender = rs.getInt("sender");
+                if (type.equals("single")) {
+                    senderName = null;
+                }
+                else {
+                    senderName = rs.getString("fullname");
+                }
+                
+                if (!seen && userId != sender) {
+                    query = """
+                            UPDATE messages
+                            SET seen=?
+                            WHERE id=?
+                            """;
+                    PreparedStatement seenStmt = conn.prepareStatement(query);
+                    seenStmt.setBoolean(1, true);
+                    seenStmt.setInt(2, Integer.valueOf(msgId));
+                    seenStmt.execute();
+                    seenStmt.close();
+                }
 
                 HashMap<String, String> row = new HashMap<>();
                 row.put("msgId", msgId);
                 row.put("content", content);
-                row.put("seen", seen);
-                row.put("sender", sender);
+                row.put("sender", String.valueOf(sender));
+                row.put("sender_name", senderName);
                 chatHistory.add(row);
             }
             rs.close();
@@ -83,7 +117,7 @@ public class ChatModel {
         }
     }
 
-    public int saveChat(String msg) {
+    private int saveChat(String msg) {
         int msgId = -1;
         try {
             String query = """
@@ -100,15 +134,69 @@ public class ChatModel {
             rs.next();
             msgId = rs.getInt("id");
 
-            query = """
+            rs.close();
+            st.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return msgId;
+    }
+
+    public int saveSingleChat(String msg) {
+        int msgId = saveChat(msg);
+        if (msgId == -1) {
+            return msgId;
+        }
+        try {
+            String query = """
                     INSERT INTO message_user (message_id, user_id)
                     VALUES (?, ?)
                     """;
+            PreparedStatement st = null;
             int ids[] = {userId, receiver};
             for (int id: ids) {
                 st = conn.prepareStatement(query);
                 st.setInt(1, msgId);
                 st.setInt(2, id);
+                st.execute();
+            }
+
+            if (st != null)
+                st.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return msgId;
+    }
+
+    public int saveGroupChat(String msg, int groupId) {
+        int msgId = saveChat(msg);
+        if (msgId == -1) {
+            return msgId;
+        }
+        try {
+            String query = """
+                    SELECT user_id
+                    FROM group_member
+                    WHERE group_id=?
+                    """;
+            PreparedStatement st = conn.prepareStatement(query);
+            st.setInt(1, groupId);
+            ResultSet rs = st.executeQuery();
+            ArrayList<Integer> ids = new ArrayList<>();
+            while (rs.next()) {
+                ids.add(rs.getInt("user_id"));
+            }
+            
+            query = """
+                    INSERT INTO message_user (message_id, user_id, group_id)
+                    VALUES (?, ?, ?)
+                    """;
+            for (int id: ids) {
+                st = conn.prepareStatement(query);
+                st.setInt(1, msgId);
+                st.setInt(2, id);
+                st.setInt(3, groupId);
                 st.execute();
             }
 
@@ -123,13 +211,37 @@ public class ChatModel {
     public void delChat(int msgId) {
         try {
             String query = """
-                    DELETE FROM message_user
-                    WHERE message_id=? AND user_id=?
+                    SELECT seen
+                    FROM messages
+                    WHERE id=?        
                     """;
             PreparedStatement st = conn.prepareStatement(query);
             st.setInt(1, msgId);
-            st.setInt(2, userId);
-            st.execute();
+            ResultSet rs = st.executeQuery();
+            rs.next();
+            boolean seen = rs.getBoolean("seen");
+
+            if (!seen) {
+                query = """
+                        DELETE FROM message_user
+                        WHERE message_id=?
+                        """;
+                st = conn.prepareStatement(query);
+                st.setInt(1, msgId);
+                st.execute();
+            }
+            else {
+                query = """
+                        DELETE FROM message_user
+                        WHERE message_id=? AND user_id=?
+                        """;
+                st = conn.prepareStatement(query);
+                st.setInt(1, msgId);
+                st.setInt(2, userId);
+                st.execute();
+            }
+
+            rs.close();
             st.close();
         } catch (Exception e) {
             System.out.println(e);
@@ -155,6 +267,12 @@ public class ChatModel {
                         WHERE user_id=? AND message_id IN (SELECT message_id
                                                         FROM message_user
                                                         WHERE user_id=? AND group_id IS NULL)
+                        """;
+            }
+            else {
+                query = """
+                        DELETE FROM message_user
+                        WHERE user_id=? AND group_id=?
                         """;
             }
             st = conn.prepareStatement(query);
