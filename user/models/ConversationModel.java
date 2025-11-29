@@ -101,4 +101,13 @@ public class ConversationModel {
     public ArrayList<HashMap<String, String>> getConversations() {
         return conversations;
     }
+
+    public boolean isIdInConversations(int id) {
+        for (var conversation: conversations) {
+            if (!conversation.get("type").equals("group") && Integer.valueOf(conversation.get("id")) == id) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

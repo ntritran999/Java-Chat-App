@@ -94,4 +94,16 @@ public class ChatSuggestDialog extends JDialog{
     public void showSuggestDialog() {
         setVisible(true);
     }
+
+    public String getPrompt() {
+        return promptTextArea.getText();
+    }
+
+    public void showAnswer(String answer) {
+        resultTextArea.setText(answer);
+    }
+
+    public void addSuggestEvent(ActionListener l) {
+        generateButton.addActionListener(l);
+    } 
 }

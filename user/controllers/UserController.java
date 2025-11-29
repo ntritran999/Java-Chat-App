@@ -5,6 +5,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.FileReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
@@ -12,6 +19,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.*;
 
@@ -194,7 +204,7 @@ public class UserController {
         ChatSuggestDialog chatSuggestDialog = userFrame.getChatSuggestDialog();
         SearchDialog addFriendSearchDialog = userFrame.getAddFriendSearchDialog();
 
-        loadConversations(cp, username);
+        loadConversations(cp, username, false);
 
         cp.addSettingButtonEvent(e -> {
             updateInfoDialog.showUpdateInfoDialog();
@@ -432,6 +442,36 @@ public class UserController {
         });
 
         cp.addChatSuggestionEvent(e -> {
+            chatSuggestDialog.addSuggestEvent(evt -> {
+                try {
+                    JSONObject requestBody = new JSONObject();
+                    requestBody.put("model", "llama-3.3-70b-versatile");
+                    JSONObject message = new JSONObject();
+                    message.put("role", "user");
+                    message.put("content", chatSuggestDialog.getPrompt());
+                    JSONArray messages = new JSONArray();
+                    messages.put(message);
+                    requestBody.put("messages", messages);
+
+                    Properties prop = new Properties();
+                    FileReader fr = new FileReader("groq_api_key.properties");
+                    prop.load(fr);
+                    String API_KEY = prop.getProperty("API_KEY");
+                    HttpRequest request = HttpRequest.newBuilder()
+                                    .uri(new URI("https://api.groq.com/openai/v1/chat/completions"))
+                                    .header("Content-Type", "application/json")
+                                    .header("Authorization", "Bearer " + API_KEY)
+                                    .POST(BodyPublishers.ofString(requestBody.toString()))
+                                    .build();
+
+                    HttpResponse<String> response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
+                    JSONObject responseBody = new JSONObject(response.body());
+                    String answer = responseBody.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+                    chatSuggestDialog.showAnswer(answer);
+                } catch (Exception ex) {
+                    System.out.println(ex);
+                }
+            });
             chatSuggestDialog.showSuggestDialog();
         });
 
@@ -444,7 +484,7 @@ public class UserController {
         });
 
         cp.addMsgListButonEvent(e -> {
-            loadConversations(cp, username);
+            loadConversations(cp, username, false);
         });
 
         cp.addAddFriendButtonEvent(e -> {
@@ -537,11 +577,32 @@ public class UserController {
                         client = new ChatClient();
                         client.initClient(chatModel.findUserId(username), otherId, "single");
                         client.addMsgHandler(msg -> {
-                            if (msg.getInt("sender_id") == otherId) {
-                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
-                                                                                false, 
-                                                                                        msg.getInt("msg_id"));
-                                cp.addToChatPanel(chatLine);
+                            if (msg.has("status")) {
+                                int id = msg.getInt("id");
+                                new SwingWorker<Boolean, Void>() {
+                                    @Override
+                                    protected Boolean doInBackground() {
+                                        return new ConversationModel(userModel.getConn(), username).isIdInConversations(id);
+                                    }
+                                    @Override
+                                    protected void done() {
+                                        try {
+                                            if (get()) {
+                                                loadConversations(cp, username, true);
+                                            }
+                                        } catch (Exception ex) {
+                                            System.out.println(ex);
+                                        }
+                                    }
+                                }.execute();
+                            }
+                            else {
+                                if (msg.getInt("sender_id") == otherId) {
+                                    ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
+                                                                                    false, 
+                                                                                            msg.getInt("msg_id"));
+                                    cp.addToChatPanel(chatLine);
+                                }
                             }
                         });
                         client.listen();
@@ -574,7 +635,8 @@ public class UserController {
                         ChatPage.FriendPanel fp = cp.createFriendPanel(map.get("fullname"), "Online", new MouseAdapter() {
                             @Override
                             public void mousePressed(MouseEvent me) {
-                                // openChat();
+                                cp.setChatName(map.get("fullname"));
+                                openChat(cp, username, Integer.valueOf(map.get("id")), "single");
                             }
                         });
                         fp.addReportButtonEvent(ev -> {
@@ -625,7 +687,7 @@ public class UserController {
                                                                                 createGroupDialog, username, id);
                                         
                                         if (successful) {
-                                            loadConversations(cp, username);
+                                            loadConversations(cp, username, false);
                                         }
                                     }
                                 };
@@ -651,7 +713,7 @@ public class UserController {
         }
     }
 
-    private void loadConversations(ChatPage cp, String username) {
+    private void loadConversations(ChatPage cp, String username, boolean isPassive) {
         new SwingWorker<ConversationModel, Void> () {
                 @Override
                 protected ConversationModel doInBackground() throws Exception {
@@ -709,7 +771,7 @@ public class UserController {
                                     gp.addGroupSettingButtonEvent(e -> {
                                         GroupSettingDialog groupSettingDialog = userFrame.getGroupSettingDialog();
                                         GroupSettingController.handleGroupSetting(userModel.getConn(), groupSettingDialog, id, username);
-                                        loadConversations(cp, username);
+                                        loadConversations(cp, username, false);
                                     });
                                     cp.addToListPanel(gp);
                                     break;
@@ -718,7 +780,7 @@ public class UserController {
                             }
                         }
                         cp.updateListPanel();
-                        if (!list.isEmpty()) {
+                        if (!isPassive && !list.isEmpty()) {
                             HashMap<String, String> firstEntry = list.get(0);
                             String name = firstEntry.get("name");
                             int otherId = Integer.valueOf(firstEntry.get("id"));

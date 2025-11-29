@@ -28,6 +28,7 @@ public class ClientHandler implements Runnable {
             }
             userId = Integer.valueOf(line);
             handlers.add(this);
+            broadCastStatus();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -71,7 +72,26 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private void broadCastStatus() {
+        for (var handler: handlers) {
+            try {
+                if (handler.userId != this.userId) {
+                    JSONObject statusBoardCast = new JSONObject();
+                    statusBoardCast.put("id", this.userId);
+                    statusBoardCast.put("status", "reload status");
+                    handler.writer.write(statusBoardCast.toString());
+                    handler.writer.newLine();
+                    handler.writer.flush();
+                }
+            } catch (Exception e) {
+                closeHanlder();
+            }
+        }
+    }
+
     private void closeHanlder() {
+        handlers.remove(this);
+        broadCastStatus();
         try {
             if (socket != null) {
                 socket.close();
