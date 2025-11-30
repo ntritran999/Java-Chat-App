@@ -5,6 +5,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.FileReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
@@ -13,9 +20,13 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.*;
 
 import admin.views.AdminDashboard;
+import server.ChatClient;
 import user.models.*;
 import user.views.*;
 import user.views.ChatPage.FriendRequestPanel;
@@ -23,6 +34,7 @@ import user.views.ChatPage.FriendRequestPanel;
 public class UserController {
     private UserModel userModel;
     private UserFrame userFrame;
+    private ChatClient client;
     
     public UserController(UserModel userModel, UserFrame userFrame) {
         this.userModel = userModel;
@@ -186,17 +198,14 @@ public class UserController {
 
     public void useChatPage(String username) {
         ChatPage cp = new ChatPage();
+        userFrame.setUpUserFrame();
         UpdateInfoDialog updateInfoDialog = userFrame.getUpdateInfoDialog();
         SearchDialog msgSearchDialog = userFrame.getMsgSearchDialog();
         SearchDialog groupSearchDialog = userFrame.getGroupSearchDialog();
         ChatSuggestDialog chatSuggestDialog = userFrame.getChatSuggestDialog();
         SearchDialog addFriendSearchDialog = userFrame.getAddFriendSearchDialog();
 
-        loadConversations(cp, username);
-
-        cp.addToChatPanel(cp.createChatLinePanel("Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.", true));
-        cp.addToChatPanel(cp.createChatLinePanel("Wow, that's a lot of text.", false));
-        cp.addToChatPanel(cp.createChatLinePanel("I know right", true));
+        loadConversations(cp, username, false);
 
         cp.addSettingButtonEvent(e -> {
             updateInfoDialog.showUpdateInfoDialog();
@@ -285,6 +294,8 @@ public class UserController {
                 } catch (Exception excep) {
                     System.out.println(excep);
                 }
+                if (client != null)
+                    client.disconnectClient();
                 useLoginPage();
             }
         });
@@ -375,9 +386,36 @@ public class UserController {
 
         cp.addSendButtonEvent(e -> {
             String msg = cp.getMessageArea().getText();
-            if (!msg.isEmpty()) {
-                cp.emptyMessage();
-                cp.addToChatPanel(cp.createChatLinePanel(msg, true));
+            if (!msg.isEmpty() && client != null && client.isInitialized()) {
+                int receiver = client.getReceiver();
+                String msgType = client.getMsgType();
+                ChatModel cm = new ChatModel(userModel.getConn(), username, receiver, msgType);
+                new SwingWorker<Integer,Void>() {
+                    @Override
+                    protected Integer doInBackground() throws Exception {
+                        if (msgType.equals("single"))
+                            return cm.saveSingleChat(msg);
+                        return cm.saveGroupChat(msg, receiver);
+                    }
+                    @Override
+                    protected void done() {
+                        try {
+                            int msgId = get();
+                            if (msgId != -1) {
+                                cp.emptyMessage();
+                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg, true, msgId);
+                                cp.addToChatPanel(chatLine);
+                                addDeleteChatLineEvent(chatLine, cm, cp, msgId, username, receiver, msgType);
+                                client.sendMessage(username, msg, msgId);
+                            }
+                            else {
+                                JOptionPane.showMessageDialog(userFrame, "Không thể gửi tin nhắn", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
+                }.execute();
             }
         });
 
@@ -395,9 +433,54 @@ public class UserController {
                                                     "Xoá lịch sử chat",
                                                     JOptionPane.YES_NO_OPTION,
                                                     JOptionPane.WARNING_MESSAGE);
+            if (op == 0 && client != null) {
+                int receiver = client.getReceiver();
+                String msgType = client.getMsgType();
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() {
+                        ChatModel.delAllChat(userModel.getConn(), username, receiver, msgType);
+                        return null;
+                    }
+                    @Override
+                    protected void done() {
+                        openChat(cp, username, receiver, msgType);
+                    }
+                }.execute();
+            }
         });
 
         cp.addChatSuggestionEvent(e -> {
+            chatSuggestDialog.addSuggestEvent(evt -> {
+                try {
+                    JSONObject requestBody = new JSONObject();
+                    requestBody.put("model", "llama-3.3-70b-versatile");
+                    JSONObject message = new JSONObject();
+                    message.put("role", "user");
+                    message.put("content", chatSuggestDialog.getPrompt());
+                    JSONArray messages = new JSONArray();
+                    messages.put(message);
+                    requestBody.put("messages", messages);
+
+                    Properties prop = new Properties();
+                    FileReader fr = new FileReader("groq_api_key.properties");
+                    prop.load(fr);
+                    String API_KEY = prop.getProperty("API_KEY");
+                    HttpRequest request = HttpRequest.newBuilder()
+                                    .uri(new URI("https://api.groq.com/openai/v1/chat/completions"))
+                                    .header("Content-Type", "application/json")
+                                    .header("Authorization", "Bearer " + API_KEY)
+                                    .POST(BodyPublishers.ofString(requestBody.toString()))
+                                    .build();
+
+                    HttpResponse<String> response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
+                    JSONObject responseBody = new JSONObject(response.body());
+                    String answer = responseBody.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+                    chatSuggestDialog.showAnswer(answer);
+                } catch (Exception ex) {
+                    System.out.println(ex);
+                }
+            });
             chatSuggestDialog.showSuggestDialog();
         });
 
@@ -410,22 +493,149 @@ public class UserController {
         });
 
         cp.addMsgListButonEvent(e -> {
-            loadConversations(cp, username);
+            loadConversations(cp, username, false);
         });
 
         cp.addAddFriendButtonEvent(e -> {
             addFriendSearchDialog.showSearchDialog();
+        });
+
+        cp.addSearchThisChatEvent(e -> {
+            SwingUtilities.getWindowAncestor((Component)e.getSource()).dispose();
+            cp.findTextInChat(cp.getChatSearch());
+        });
+
+        cp.addSearchAllChatEvent(e -> {
+            SwingUtilities.getWindowAncestor((Component)e.getSource()).dispose();
+            new SwingWorker<HashMap<String, String>, Void>() {
+                @Override
+                protected HashMap<String, String> doInBackground() {
+                    return ChatModel.findTextFromAll(userModel.getConn(), username, cp.getChatSearch());
+                }
+                @Override
+                protected void done() {
+                    try {
+                        HashMap<String, String> map = get();
+                        cp.setChatName(map.get("name"));
+                        SwingWorker<ChatModel, Void> worker = openChat(cp, username, Integer.valueOf(map.get("receiver")), map.get("type"));
+                        worker.addPropertyChangeListener(evt -> {
+                            if ("state".equals(evt.getPropertyName()) && (SwingWorker.StateValue.DONE.equals(evt.getNewValue()))) {
+                                cp.findTextInChat(cp.getChatSearch());
+                            }
+                        });
+                    } catch (Exception e) {
+                        System.out.println(e);
+                    }
+                }
+            }.execute();
         });
         
         addFriendSearchDialog.getSearchField().addActionListener(e -> {
             loadAddFriendSearchResult(cp, addFriendSearchDialog, username);
         });
 
+        userFrame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() {
+                        try {
+                            ActivitiesModel.setOffline(userModel.getConn(), username);
+                        } catch (Exception excep) {
+                            System.out.println(excep);
+                        }
+                        return null;
+                    }
+                }.execute();
+                if (client != null)
+                    client.disconnectClient();
+            }
+        });
+
         userFrame.updateUserFrame(cp);
     }
 
-    private void openChat() {
-        JOptionPane.showMessageDialog(null, "Hello");
+    private SwingWorker<ChatModel, Void> openChat(ChatPage cp, String username, int otherId, String type) {
+        SwingWorker<ChatModel, Void> worker = new SwingWorker<ChatModel, Void>() {
+            @Override
+            protected ChatModel doInBackground() throws Exception {
+                return new ChatModel(userModel.getConn(), username, otherId, type);
+            }
+            @Override
+            protected void done() {
+                try {
+                    cp.clearChatPanel();
+                    ChatModel chatModel = get();
+                    ArrayList<HashMap<String, String>> list = chatModel.getChatHistory();
+                    int userId = chatModel.getUserId();
+                    for (var map: list) {
+                        boolean isSender = Integer.valueOf(map.get("sender")) == userId;
+                        int msgId = Integer.valueOf(map.get("msgId"));
+                        ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(map.get("content"), isSender, msgId);
+                        if (isSender) {
+                            addDeleteChatLineEvent(chatLine, chatModel, cp, msgId, username, otherId, type);
+                        }
+                        else {
+                            chatLine.addSenderName(map.get("sender_name"));
+                        }
+                        cp.addToChatPanel(chatLine);
+                    }
+    
+                    if (client != null) 
+                    client.disconnectClient();
+
+                    client = new ChatClient();
+                    client.initClient(userId, otherId, type);
+                    client.addMsgHandler(msg -> {
+                        if (msg.has("status")) {
+                            int id = msg.getInt("id");
+                            new SwingWorker<Boolean, Void>() {
+                                @Override
+                                protected Boolean doInBackground() {
+                                    return new ConversationModel(userModel.getConn(), username).isIdInConversations(id);
+                                }
+                                @Override
+                                protected void done() {
+                                    try {
+                                        if (get()) {
+                                            loadConversations(cp, username, true);
+                                        }
+                                    } catch (Exception ex) {
+                                        System.out.println(ex);
+                                    }
+                                }
+                            }.execute();
+                        }
+                        else if (msg.has("group_id")) {
+                            if (msg.getInt("group_id") == otherId) {
+                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
+                                                                            false, 
+                                                                                    msg.getInt("msg_id"));
+                                chatLine.addSenderName(msg.getString("sender_name"));
+                                cp.addToChatPanel(chatLine);
+                            }
+                        }
+                        else {
+                            if (msg.getInt("sender_id") == otherId) {
+                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
+                                                                                false, 
+                                                                                        msg.getInt("msg_id"));
+                                cp.addToChatPanel(chatLine);
+                            }
+                        }
+                    });
+
+                    client.listen();
+    
+                    cp.updateChatPanel();
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+        };
+        worker.execute();
+        return worker;
     }
 
     private void loadOnlineFriends(ChatPage cp, String username) {
@@ -444,18 +654,21 @@ public class UserController {
                         ChatPage.FriendPanel fp = cp.createFriendPanel(map.get("fullname"), "Online", new MouseAdapter() {
                             @Override
                             public void mousePressed(MouseEvent me) {
-                                openChat();
+                                cp.setChatName(map.get("fullname"));
+                                openChat(cp, username, Integer.valueOf(map.get("id")), "single");
                             }
                         });
                         fp.addReportButtonEvent(ev -> {
+                            if(cp.showReportWarning() == 0) {
+                                new SwingWorker<Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground() {
+                                        SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
+                                        return null;
+                                    }
+                                }.execute();
+                            }
                             SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
-                            new SwingWorker<Void, Void>() {
-                                @Override
-                                protected Void doInBackground() {
-                                    SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
-                                    return null;
-                                }
-                            }.execute();
                         });
                         cp.addToListPanel(fp);
                     }
@@ -483,17 +696,17 @@ public class UserController {
                         sd.clearListPanel();
                         for (var map : list) {
                             MouseAdapter ma = null;
+                            int id = Integer.valueOf(map.get("id"));
                             if (type == "group") {
                                 ma = new MouseAdapter() {
                                     @Override
                                     public void mousePressed(MouseEvent me) {
-                                        CreateGroupDialog createGroupDialog = userFrame.getCreateGroupDialog();
+                                        CreateGroupDialog createGroupDialog = new CreateGroupDialog(userFrame);
                                         boolean successful = CreateGroupController.handleCreateGroup(userModel.getConn(), 
-                                                                                createGroupDialog, username, 
-                                                                                Integer.valueOf(map.get("id")));
+                                                                                createGroupDialog, username, id);
                                         
                                         if (successful) {
-                                            loadConversations(cp, username);
+                                            loadConversations(cp, username, false);
                                         }
                                     }
                                 };
@@ -502,7 +715,9 @@ public class UserController {
                                 ma = new MouseAdapter() {
                                     @Override
                                     public void mousePressed(MouseEvent me) {
-                                        JOptionPane.showMessageDialog(null, "Hello");
+                                        sd.dispose();
+                                        cp.setChatName(map.get("name"));
+                                        openChat(cp, username, id, "single");
                                     }
                                 };
                             }
@@ -517,7 +732,7 @@ public class UserController {
         }
     }
 
-    private void loadConversations(ChatPage cp, String username) {
+    private void loadConversations(ChatPage cp, String username, boolean isPassive) {
         new SwingWorker<ConversationModel, Void> () {
                 @Override
                 protected ConversationModel doInBackground() throws Exception {
@@ -538,7 +753,8 @@ public class UserController {
                                     ChatPage.FriendPanel fp = cp.createFriendPanel(name, status, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
-                                            openChat();
+                                            cp.setChatName(name);
+                                            openChat(cp, username, id, "single");
                                         }
                                     });
                                     cp.addToListPanel(fp);
@@ -547,7 +763,19 @@ public class UserController {
                                     ChatPage.PersonPanel pp = cp.createPersonPanel(name, status, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
-                                            openChat();
+                                            cp.setChatName(name);
+                                            openChat(cp, username, id, "single");
+                                        }
+                                    });
+                                    pp.addReportButtonEvent(ev -> {
+                                        if (cp.showReportWarning() == 0) {
+                                            new SwingWorker<Void, Void>() {
+                                                @Override
+                                                protected Void doInBackground() {
+                                                    SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
+                                                    return null;
+                                                }
+                                            }.execute();
                                         }
                                     });
                                     cp.addToListPanel(pp);
@@ -556,13 +784,14 @@ public class UserController {
                                     ChatPage.GroupPanel gp = cp.createGroupPanel(name, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
-                                            openChat();
+                                            cp.setChatName(name);
+                                            openChat(cp, username, id, "multiple");
                                         }
                                     });
                                     gp.addGroupSettingButtonEvent(e -> {
-                                        GroupSettingDialog groupSettingDialog = userFrame.getGroupSettingDialog();
+                                        GroupSettingDialog groupSettingDialog = new GroupSettingDialog(userFrame);
                                         GroupSettingController.handleGroupSetting(userModel.getConn(), groupSettingDialog, id, username);
-                                        loadConversations(cp, username);
+                                        loadConversations(cp, username, false);
                                     });
                                     cp.addToListPanel(gp);
                                     break;
@@ -571,6 +800,14 @@ public class UserController {
                             }
                         }
                         cp.updateListPanel();
+                        if (!isPassive && !list.isEmpty()) {
+                            HashMap<String, String> firstEntry = list.get(0);
+                            String name = firstEntry.get("name");
+                            int otherId = Integer.valueOf(firstEntry.get("id"));
+                            String msgType = (firstEntry.get("type").equals("group")) ? "multiple" : "single";
+                            cp.setChatName(name);
+                            openChat(cp, username, otherId, msgType);
+                        }
 
                     } catch (Exception e) {
                         System.out.println(e);
@@ -581,5 +818,28 @@ public class UserController {
 
     private void loadAddFriendSearchResult(ChatPage cp, SearchDialog sd, String username) {
         System.out.println("Results: ...");
+    }
+
+    private void addDeleteChatLineEvent(ChatPage.ChatLinePanel chatLine, ChatModel chatModel, ChatPage cp, int msgId, String username, int otherId, String type) {
+        chatLine.addDeleteEvent(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent me) {
+                if (SwingUtilities.isRightMouseButton(me)) {
+                    Object[] options = { "Có", "Không" };
+                    int option = JOptionPane.showOptionDialog(null, 
+                                            "Bạn có muốn xoá đoạn chat này không?", 
+                                            "Xoá chat",
+                                            JOptionPane.YES_NO_OPTION,
+                                            JOptionPane.WARNING_MESSAGE,
+                                            null,
+                                            options,
+                                            options[0]);
+                    if (option == 0) {
+                        chatModel.delChat(msgId);
+                        openChat(cp, username, otherId, type);
+                    }
+                }
+            }
+        });
     }
 }

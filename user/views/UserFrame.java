@@ -8,8 +8,6 @@ import com.formdev.flatlaf.FlatLightLaf;
 public class UserFrame extends JFrame {
     private UpdateInfoDialog updateInfoDialog;
     private SearchDialog msgSearchDialog, groupSearchDialog;
-    private CreateGroupDialog createGroupDialog;
-    private GroupSettingDialog groupSettingDialog;
     private ChatSuggestDialog chatSuggestDialog;
     private SearchDialog addFriendSearchDialog;
     public UserFrame() {
@@ -20,12 +18,12 @@ public class UserFrame extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
         setTitle("Ứng dụng chat");
+    }
 
+    public void setUpUserFrame() {
         updateInfoDialog = new UpdateInfoDialog(this);
         msgSearchDialog = new SearchDialog(this);
         groupSearchDialog = new SearchDialog(this);
-        createGroupDialog = new CreateGroupDialog(this);
-        groupSettingDialog = new GroupSettingDialog(this);
         chatSuggestDialog = new ChatSuggestDialog(this);
         addFriendSearchDialog = new SearchDialog(this);
     }
@@ -46,14 +44,6 @@ public class UserFrame extends JFrame {
 
     public SearchDialog getGroupSearchDialog() {
         return groupSearchDialog;
-    }
-
-    public CreateGroupDialog getCreateGroupDialog() {
-        return createGroupDialog;
-    }
-
-    public GroupSettingDialog getGroupSettingDialog() {
-        return groupSettingDialog;
     }
 
     public ChatSuggestDialog getChatSuggestDialog() {

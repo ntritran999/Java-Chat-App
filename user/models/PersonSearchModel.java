@@ -20,11 +20,12 @@ public class PersonSearchModel {
         try {
             results.clear();
             String query = """
-                    SELECT account.username, find_ai.user_id
+                    SELECT user_info.fullname, find_ai.user_id
                     FROM account
                     JOIN account_info find_ai ON find_ai.username=account.username
                     LEFT JOIN block ON block.user1=find_ai.user_id
                     JOIN account_info cur_ai ON cur_ai.username=?
+                    JOIN user_info ON find_ai.user_id=user_info.id
                     WHERE account.username!=? AND account.username ILIKE ? AND (block.user2 IS NULL OR cur_ai.user_id!=block.user2)
                     """;
             PreparedStatement st = conn.prepareStatement(query);
@@ -39,7 +40,7 @@ public class PersonSearchModel {
                 if (!foundByUsername) {
                     foundByUsername = true;
                 }
-                name = rs.getString("username");
+                name = rs.getString("fullname");
                 id = rs.getString("user_id");
                 HashMap<String, String> row = new HashMap<>();
                 row.put("name", name);

@@ -32,7 +32,8 @@ public class ConversationModel {
                         JOIN user_info ON acc2.user_id=user_info.id
                         JOIN account ON account.username=acc2.username
                         JOIN messages ON mu1.message_id=messages.id
-                        WHERE acc1.username=? AND mu1.group_id IS NULL
+                        LEFT JOIN block ON block.user1=acc1.user_id
+                        WHERE acc1.username=? AND mu1.group_id IS NULL AND (block.user2 IS NULL OR block.user2!=acc2.user_id)
                         GROUP BY acc2.user_id, user_info.fullname, account.status
                         
                         UNION ALL
@@ -75,6 +76,12 @@ public class ConversationModel {
                 id = rs.getString("id");
                 name = rs.getString("name");
                 status = rs.getString("status");
+                if (status.equals("A")) {
+                    status = "Online";
+                }
+                else {
+                    status = "Offline";
+                }
                 type = rs.getString("type");
 
                 HashMap<String, String> row = new HashMap<>();
@@ -94,5 +101,14 @@ public class ConversationModel {
 
     public ArrayList<HashMap<String, String>> getConversations() {
         return conversations;
+    }
+
+    public boolean isIdInConversations(int id) {
+        for (var conversation: conversations) {
+            if (!conversation.get("type").equals("group") && Integer.valueOf(conversation.get("id")) == id) {
+                return true;
+            }
+        }
+        return false;
     }
 }

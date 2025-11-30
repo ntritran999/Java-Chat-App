@@ -6,9 +6,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.Box;
@@ -17,10 +16,11 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-
+import javax.swing.JScrollBar;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
@@ -39,11 +39,14 @@ class IconButton extends JButton {
 
 public class ChatPage extends JPanel {
     public class ChatLinePanel extends JPanel {
-        public ChatLinePanel(String text, boolean sender) {
+        private JTextArea msg;
+        private int msgId;
+        public ChatLinePanel(String text, boolean sender, int msgId) {
+            this.msgId = msgId;
             int align = (sender) ? FlowLayout.TRAILING : FlowLayout.LEADING;
             setLayout(new FlowLayout(align, 10, 0));
 
-            JTextArea msg = new JTextArea(text);
+            msg = new JTextArea(text);
             msg.setFont(msg.getFont().deriveFont(16f));
             msg.setLineWrap(true);
             msg.setWrapStyleWord(true);
@@ -53,29 +56,34 @@ public class ChatPage extends JPanel {
                     BorderFactory.createEmptyBorder(5, 5, 5, 5)));
             msg.setBackground(new Color(bgColorDark));
 
-            int maxWidth = 400;
-            msg.setSize(new Dimension(maxWidth, Integer.MAX_VALUE));
-            Dimension d = msg.getPreferredSize();
-            msg.setPreferredSize(d);
-            msg.setMaximumSize(new Dimension(maxWidth, d.height));
+            int maxColumn = 30;
+            int columns = Math.min(maxColumn, text.length());
+            msg.setColumns(columns);
 
             add(msg);
-            msg.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent me) {
-                    if (SwingUtilities.isRightMouseButton(me)) {
-                        Object[] options = { "Có", "Không" };
-                        JOptionPane.showOptionDialog(null, 
-                                                "Bạn có muốn xoá đoạn chat này không?", 
-                                                "Xoá chat",
-                                                JOptionPane.YES_NO_OPTION,
-                                                JOptionPane.WARNING_MESSAGE,
-                                                null,
-                                                options,
-                                                options[0]);
-                    }
-                }
+
+            centerChatPanel.revalidate();
+            centerChatPanel.repaint();
+            SwingUtilities.invokeLater(() -> {
+                JScrollBar vertical = centerScrollPane.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
             });
+        }
+        public String getContent() {
+            return msg.getText();
+        }
+        public int getMsgId() {
+            return msgId;
+        }
+        public void addDeleteEvent(MouseListener ml) {
+            msg.addMouseListener(ml);
+        }
+        public void addSenderName(String name) {
+            if (name != null) {
+                JLabel nameLabel = new JLabel(name);
+                nameLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+                add(nameLabel, 0);
+            }
         }
     }
 
@@ -283,6 +291,8 @@ public class ChatPage extends JPanel {
             sendButton, deleteAllHistoryButton, chatSuggestionButtton, msgListButton, addFriendButton;
     private JButton findButton, findAllButton;
     private JPanel listPanel, centerChatPanel, topChatPanel;
+    private JScrollPane centerScrollPane;
+    private JLabel chatName;
 
     public ChatPage() {
         setLayout(new BorderLayout());
@@ -399,7 +409,7 @@ public class ChatPage extends JPanel {
 
         centerChatPanel = new JPanel();
         centerChatPanel.setLayout(new BoxLayout(centerChatPanel, BoxLayout.PAGE_AXIS));
-        JScrollPane centerScrollPane = new JScrollPane(centerChatPanel);
+        centerScrollPane = new JScrollPane(centerChatPanel);
         JPanel bottomChatPanel = new JPanel();
         JPanel topChatPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
 
@@ -423,6 +433,16 @@ public class ChatPage extends JPanel {
         topChatPanel.add(chatSearchField);
         topChatPanel.add(searchBtn);
         topChatPanel.add(deleteAllHistoryButton);
+
+        chatName = new JLabel();
+        chatName.setFont(new Font("SansSerif", Font.BOLD, 16));
+        JPanel chatNamePanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+        chatNamePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        chatNamePanel.add(chatName);
+        topChatPanel.add(chatNamePanel, 0);
+        JSeparator separator = new JSeparator(JSeparator.VERTICAL);
+        separator.setPreferredSize(new Dimension(10, 30));
+        topChatPanel.add(separator, 1);
 
         messageTextArea = new JTextArea();
         messageTextArea.setLineWrap(true);
@@ -470,8 +490,8 @@ public class ChatPage extends JPanel {
         return new SearchResultPanel(fullName, l);
     }
 
-    public ChatLinePanel createChatLinePanel(String text, boolean sender) {
-        return new ChatLinePanel(text, sender);
+    public ChatLinePanel createChatLinePanel(String text, boolean sender, int msgId) {
+        return new ChatLinePanel(text, sender, msgId);
     }
 
     public JTextArea getMessageArea() {
@@ -538,6 +558,18 @@ public class ChatPage extends JPanel {
         addFriendButton.addActionListener(l);
     }
 
+    public void addSearchThisChatEvent(ActionListener l) {
+        findButton.addActionListener(l);
+    }
+
+    public void addSearchAllChatEvent(ActionListener l) {
+        findAllButton.addActionListener(l);
+    }
+
+    public String getChatSearch() {
+        return chatSearchField.getText();
+    }
+
     public JPanel getCenterChatPanel() {
         return centerChatPanel;
     }
@@ -572,16 +604,33 @@ public class ChatPage extends JPanel {
         centerChatPanel.repaint();
     }
 
-    public int showLogoutWarning() {
+    public void clearChatPanel() {
+        centerChatPanel.removeAll();
+    }
+
+    public void updateChatPanel() {
+        centerChatPanel.revalidate();
+        centerChatPanel.repaint();
+    }
+
+    private int showWarning(String title) {
         Object[] options = { "Có", "Không" };
         return JOptionPane.showOptionDialog(this, 
                                 "Bạn có chắc chắn không", 
-                                  "Đăng xuất",
+                                  title,
                                   JOptionPane.YES_NO_OPTION,
                                   JOptionPane.WARNING_MESSAGE,
                                   null,
                                   options,
                                   options[0]);
+    }
+
+    public int showLogoutWarning() {
+        return showWarning("Đăng xuất");
+    }
+
+    public int showReportWarning() {
+        return showWarning("Report chat");
     }
 
     public void showUpdateInfoFail(){
@@ -599,4 +648,27 @@ public class ChatPage extends JPanel {
     public void showUpdatePassSuccess() {
         JOptionPane.showMessageDialog(this, "Cập nhật mật khẩu thành công", "Reset thành công", JOptionPane.INFORMATION_MESSAGE);
     } 
+
+    public void setChatName(String name) {
+        chatName.setText(name);
+    }
+    
+    public String findTextInChat(String text) {
+        Component[] components = centerChatPanel.getComponents();
+        for (int i = components.length - 1; i >= 0; i--) {
+            Component c = components[i];
+            if (c instanceof ChatLinePanel) {
+                ChatLinePanel chatLine = (ChatLinePanel)c;
+                String content = chatLine.getContent();
+                if (content.contains(text)) {
+                    SwingUtilities.invokeLater(() -> {
+                        Rectangle rect = chatLine.getBounds();
+                        chatLine.scrollRectToVisible(new Rectangle(0, 0, rect.width, rect.height));
+                    });
+                    break;
+                }
+            }
+        }
+        return null;
+    }
 }
