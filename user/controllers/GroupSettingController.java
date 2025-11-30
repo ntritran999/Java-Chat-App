@@ -1,9 +1,6 @@
 package user.controllers;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
@@ -58,18 +55,23 @@ public class GroupSettingController {
         gsd.addAddAdminEvent(e -> {
             String newAdmin = gsd.getAdminToAdd();
             if (!newAdmin.isEmpty()) {
-                new SwingWorker<Void, Void> () {
+                new SwingWorker<Boolean, Void> () {
                     @Override
-                    protected Void doInBackground() throws Exception {
-                        GroupSettingModel.setAdmin(conn, groupId, newAdmin);
-                        return null;
+                    protected Boolean doInBackground() throws Exception {
+                        return GroupSettingModel.setAdmin(conn, groupId, newAdmin, username);
                     }
                     @Override
                     protected void done() {
                         try {
-                            JOptionPane.showMessageDialog(gsd, "Gán admin thành công");
+                            if (get()) {
+                                JOptionPane.showMessageDialog(gsd, "Gán admin thành công");
+                            }
+                            else {
+                                JOptionPane.showMessageDialog(gsd, "Bạn không là admin của nhóm.");
+                            }
                         } catch (Exception e) {
                             System.out.println(e);
+                            JOptionPane.showMessageDialog(gsd, "Gán admin thất bại.");
                         }
                     }
                 }.execute();
@@ -79,18 +81,23 @@ public class GroupSettingController {
         gsd.addRemoveMemEvent(e -> {
             String mem = gsd.getMemberToRemove();
             if (!mem.isEmpty()) {
-                new SwingWorker<Void, Void> () {
+                new SwingWorker<Boolean, Void> () {
                     @Override
-                    protected Void doInBackground() throws Exception {
-                        GroupSettingModel.removeMember(conn, groupId, mem, username);
-                        return null;
+                    protected Boolean doInBackground() throws Exception {
+                        return GroupSettingModel.removeMember(conn, groupId, mem, username);
                     }
                     @Override
                     protected void done() {
                         try {
-                            JOptionPane.showMessageDialog(gsd, "Xoá thành viên thành công");
+                            if (get()) {
+                                JOptionPane.showMessageDialog(gsd, "Xoá thành viên thành công");
+                            }
+                            else {
+                                JOptionPane.showMessageDialog(gsd, "Bạn không là admin của nhóm.");
+                            }
                         } catch (Exception e) {
                             System.out.println(e);
+                            JOptionPane.showMessageDialog(gsd, "Xoá thành viên thất bại.");
                         }
                     }
                 }.execute();

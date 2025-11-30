@@ -198,6 +198,7 @@ public class UserController {
 
     public void useChatPage(String username) {
         ChatPage cp = new ChatPage();
+        userFrame.setUpUserFrame();
         UpdateInfoDialog updateInfoDialog = userFrame.getUpdateInfoDialog();
         SearchDialog msgSearchDialog = userFrame.getMsgSearchDialog();
         SearchDialog groupSearchDialog = userFrame.getGroupSearchDialog();
@@ -406,6 +407,9 @@ public class UserController {
                                 cp.addToChatPanel(chatLine);
                                 addDeleteChatLineEvent(chatLine, cm, cp, msgId, username, receiver, msgType);
                                 client.sendMessage(username, msg, msgId);
+                            }
+                            else {
+                                JOptionPane.showMessageDialog(userFrame, "Không thể gửi tin nhắn", "Lỗi", JOptionPane.ERROR_MESSAGE);
                             }
                         } catch (Exception e) {
                             System.out.println(e);
@@ -697,7 +701,7 @@ public class UserController {
                                 ma = new MouseAdapter() {
                                     @Override
                                     public void mousePressed(MouseEvent me) {
-                                        CreateGroupDialog createGroupDialog = userFrame.getCreateGroupDialog();
+                                        CreateGroupDialog createGroupDialog = new CreateGroupDialog(userFrame);
                                         boolean successful = CreateGroupController.handleCreateGroup(userModel.getConn(), 
                                                                                 createGroupDialog, username, id);
                                         
@@ -785,7 +789,7 @@ public class UserController {
                                         }
                                     });
                                     gp.addGroupSettingButtonEvent(e -> {
-                                        GroupSettingDialog groupSettingDialog = userFrame.getGroupSettingDialog();
+                                        GroupSettingDialog groupSettingDialog = new GroupSettingDialog(userFrame);
                                         GroupSettingController.handleGroupSetting(userModel.getConn(), groupSettingDialog, id, username);
                                         loadConversations(cp, username, false);
                                     });

@@ -38,24 +38,7 @@ public class GroupSettingModel {
         st.close();
     }
 
-    public static void setAdmin(Connection conn, int groupId, String member) throws SQLException {
-        String query = """
-                UPDATE group_member
-                SET admin=TRUE
-                WHERE group_id=? AND user_id=(SELECT gm.user_id
-                                            FROM group_member gm
-                                            JOIN account_info ai ON ai.user_id=gm.user_id
-                                            WHERE gm.group_id=? AND ai.username=?)
-                """;
-        PreparedStatement st = conn.prepareStatement(query);
-        st.setInt(1, groupId);
-        st.setInt(2, groupId);
-        st.setString(3, member);
-        st.execute();
-        st.close();
-    }
-
-    public static void removeMember(Connection conn, int groupId, String member, String username) throws SQLException {
+    private static boolean isAdmin(Connection conn, int groupId, String username) throws SQLException {
         String query = """
                     SELECT gm.admin
                     FROM group_member gm
@@ -69,22 +52,50 @@ public class GroupSettingModel {
         ResultSet rs = st.executeQuery();
         rs.next();
         boolean isAdmin = rs.getBoolean("admin");
-        if (isAdmin) {
-            query = """
+
+        rs.close();
+        st.close();
+        return isAdmin;
+    }
+
+    public static boolean setAdmin(Connection conn, int groupId, String member, String username) throws SQLException {
+        if (isAdmin(conn, groupId, username)) {
+            String query = """
+                UPDATE group_member
+                SET admin=TRUE
+                WHERE group_id=? AND user_id=(SELECT gm.user_id
+                                            FROM group_member gm
+                                            JOIN account_info ai ON ai.user_id=gm.user_id
+                                            WHERE gm.group_id=? AND ai.username=?)
+                """;
+            PreparedStatement st = conn.prepareStatement(query);
+            st.setInt(1, groupId);
+            st.setInt(2, groupId);
+            st.setString(3, member);
+            st.execute();
+            st.close();
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean removeMember(Connection conn, int groupId, String member, String username) throws SQLException {
+        if (isAdmin(conn, groupId, username)) {
+            String query = """
                     DELETE FROM group_member
                     WHERE group_id=? AND user_id=(SELECT gm.user_id
                                             FROM group_member gm
                                             JOIN account_info ai ON ai.user_id=gm.user_id
                                             WHERE gm.group_id=? AND ai.username=?)
                     """;
-            st = conn.prepareStatement(query);
+            PreparedStatement st = conn.prepareStatement(query);
             st.setInt(1, groupId);
             st.setInt(2, groupId);
             st.setString(3, member);
             st.execute();
+            st.close();
+            return true;
         }
-
-        rs.close();
-        st.close();
+        return false;
     }
 }

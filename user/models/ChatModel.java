@@ -143,7 +143,28 @@ public class ChatModel {
     }
 
     public int saveSingleChat(String msg) {
-        int msgId = saveChat(msg);
+        int msgId = -1;
+        try {
+            String query = """
+                    SELECT * 
+                    FROM block
+                    WHERE user1=? AND user2=?
+                    """;
+            PreparedStatement st = conn.prepareStatement(query);
+            st.setInt(1, receiver);
+            st.setInt(2, userId);
+            ResultSet rs = st.executeQuery();
+            boolean isBlocked = rs.next();
+            
+            rs.close();
+            st.close();
+            if (isBlocked) return msgId;
+        } catch (Exception e) {
+            System.out.println(e);
+            return msgId;
+        }
+
+        msgId = saveChat(msg);
         if (msgId == -1) {
             return msgId;
         }
