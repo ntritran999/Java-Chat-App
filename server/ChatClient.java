@@ -97,6 +97,22 @@ public class ChatClient {
         }
     }
 
+    public void sendGroupKey(String gk, int groupId, int memId) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("gk", gk);
+            data.put("group_id", groupId);
+            data.put("mem_id", memId);
+            data.put("sender_id", userId);
+
+            writer.write(data.toString());
+            writer.newLine();
+            writer.flush();
+        } catch (Exception e) {
+            closeClient();
+        }
+    }
+
     public void listen() {
         System.out.println("Listening...");
         msgListener = new MessageListener();

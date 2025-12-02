@@ -1,6 +1,7 @@
 package user.models;
 // https://stackoverflow.com/questions/33085493/how-to-hash-a-password-with-sha-512-in-java/33085670#33085670
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -9,6 +10,9 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Base64;
+
+import user.services.E2ESession;
 
 public class SignupModel {
     private String fullName;
@@ -143,8 +147,27 @@ public class SignupModel {
                 st.setDate(paramIndex++, Date.valueOf(dob));
 
                 int finalSuccess = st.executeUpdate();
-                if(finalSuccess > 0)
+                if(finalSuccess > 0) {
+                    try {
+                        KeyPair kp = E2ESession.generateX25519KeyPair();
+                        String privateKey = Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded());
+                        String publicKey = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
+
+                        E2ESession.saveKeyToFile(privateKey, username, "private_key.txt");
+                        String query = """
+                                update user_info
+                                set public_key=?
+                                where id=?
+                                """;
+                        st = conn.prepareStatement(query);
+                        st.setString(1, publicKey);
+                        st.setLong(2, id);
+                        st.execute();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     return 1;
+                }
                 return -2;
             }
         }

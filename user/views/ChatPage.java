@@ -534,14 +534,6 @@ public class ChatPage extends JPanel {
         listButton.addActionListener(l);
     }
 
-    public void addFindButtonEvent(ActionListener l) {
-        findButton.addActionListener(l);
-    }
-
-    public void addFindAllButtonEvent(ActionListener l) {
-        findAllButton.addActionListener(l);
-    }
-
     public void addDeleteAllHistoryEvent(ActionListener l) {
         deleteAllHistoryButton.addActionListener(l);
     }
