@@ -28,6 +28,8 @@ import java.util.*;
 import admin.views.AdminDashboard;
 import server.ChatClient;
 import user.models.*;
+import user.services.E2EGroup;
+import user.services.E2ESession;
 import user.views.*;
 import user.views.ChatPage.FriendRequestPanel;
 
@@ -386,6 +388,7 @@ public class UserController {
 
         cp.addSendButtonEvent(e -> {
             String msg = cp.getMessageArea().getText();
+            var encryptedMsgWrapper = new Object(){ String encryptedMsg = " "; };
             if (!msg.isEmpty() && client != null && client.isInitialized()) {
                 int receiver = client.getReceiver();
                 String msgType = client.getMsgType();
@@ -395,7 +398,30 @@ public class UserController {
                     protected Integer doInBackground() throws Exception {
                         if (msgType.equals("single"))
                             return cm.saveSingleChat(msg);
-                        return cm.saveGroupChat(msg, receiver);
+                        
+                        boolean[] isFirstMsg = {false};
+                        byte[] groupKey = E2EGroup.getGroupKey(username, receiver, isFirstMsg);
+                        if (groupKey != null) {
+                            if (isFirstMsg[0]) {
+                                ArrayList<HashMap<String, String>> members = cm.findMembers();
+                                for (var mem: members) {
+                                    int memId = Integer.valueOf(mem.get("id"));
+                                    String publicKey = mem.get("public_key");
+                                    byte[] sharedKey = E2ESession.getSharedSecret(username, memId, publicKey);
+                                    String egk = E2EGroup.encryptGroupKey(groupKey, sharedKey);
+                                        client.sendGroupKey(egk, receiver, memId);
+                                }
+                            }
+
+                            try {
+                                encryptedMsgWrapper.encryptedMsg = E2ESession.encrypt(msg, E2ESession.getSecretKeySpec(groupKey));
+                                return cm.saveGroupChat(encryptedMsgWrapper.encryptedMsg, receiver);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                return -1;
+                            }
+                        }
+                        return -1;
                     }
                     @Override
                     protected void done() {
@@ -406,7 +432,12 @@ public class UserController {
                                 ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg, true, msgId);
                                 cp.addToChatPanel(chatLine);
                                 addDeleteChatLineEvent(chatLine, cm, cp, msgId, username, receiver, msgType);
-                                client.sendMessage(username, msg, msgId);
+                                if (msgType.equals("single")) {
+                                    client.sendMessage(username, msg, msgId);
+                                }
+                                else {
+                                    client.sendMessage(username, encryptedMsgWrapper.encryptedMsg, msgId);
+                                }
                             }
                             else {
                                 JOptionPane.showMessageDialog(userFrame, "Không thể gửi tin nhắn", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -572,7 +603,24 @@ public class UserController {
                     for (var map: list) {
                         boolean isSender = Integer.valueOf(map.get("sender")) == userId;
                         int msgId = Integer.valueOf(map.get("msgId"));
-                        ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(map.get("content"), isSender, msgId);
+                        ChatPage.ChatLinePanel chatLine;
+                        String content = map.get("content");
+                        boolean isBase64;
+                        try {
+                            Base64.getDecoder().decode(content.split("\\?")[0]);
+                            isBase64 = true;
+                        } catch (Exception e) {
+                            isBase64 = false;
+                        }
+                        if (isBase64) {
+                            byte[] gk = E2EGroup.getGroupKey(username, otherId, null);
+                            String message = E2ESession.decrypt(content, E2ESession.getSecretKeySpec(gk));
+                            chatLine = cp.createChatLinePanel(message, isSender, msgId);
+                        }
+                        else {
+                            chatLine = cp.createChatLinePanel(content, isSender, msgId);
+                        }
+
                         if (isSender) {
                             addDeleteChatLineEvent(chatLine, chatModel, cp, msgId, username, otherId, type);
                         }
@@ -607,13 +655,34 @@ public class UserController {
                                 }
                             }.execute();
                         }
+                        else if (msg.has("gk")) {
+                            if (msg.getInt("group_id") == otherId) {
+                                int sender = msg.getInt("sender");
+                                String publicKey = chatModel.getPublicKey(sender);
+                                byte[] sharedKey = E2ESession.getSharedSecret(username, sender, publicKey);
+                                try {
+                                    String gk = E2ESession.decrypt(msg.getString("gk"), E2ESession.getSecretKeySpec(sharedKey));
+                                    String fileName = otherId + "_group_key.txt";
+                                    E2ESession.saveKeyToFile(gk, username, fileName);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
                         else if (msg.has("group_id")) {
                             if (msg.getInt("group_id") == otherId) {
-                                ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(msg.getString("content"), 
-                                                                            false, 
-                                                                                    msg.getInt("msg_id"));
-                                chatLine.addSenderName(msg.getString("sender_name"));
-                                cp.addToChatPanel(chatLine);
+                                String content = msg.getString("content");
+                                byte[] gk = E2EGroup.getGroupKey(username, otherId, null);
+                                try {
+                                    String decryptContent = E2ESession.decrypt(content, E2ESession.getSecretKeySpec(gk));
+                                    ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(decryptContent, 
+                                                                                false, 
+                                                                                        msg.getInt("msg_id"));
+                                    chatLine.addSenderName(msg.getString("sender_name"));
+                                    cp.addToChatPanel(chatLine);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                         else {

@@ -400,4 +400,60 @@ public class ChatModel {
     public ArrayList<HashMap<String, String>> getChatHistory() {
         return chatHistory;
     }
+
+    public ArrayList<HashMap<String, String>> findMembers() {
+        ArrayList<HashMap<String, String>> res = new ArrayList<>();
+        try {
+            String query = """
+                    SELECT ui.id, ui.public_key
+                    FROM group_member gm
+                    JOIN user_info ui ON gm.user_id=ui.id
+                    WHERE gm.group_id=? and ui.id!=?
+                    """;
+            PreparedStatement st = conn.prepareStatement(query);
+            st.setInt(1, receiver);
+            st.setInt(2, userId);
+            ResultSet rs = st.executeQuery();
+            String id, publicKey;
+            while (rs.next()) {
+                id = rs.getString("id");
+                publicKey = rs.getString("public_key");
+
+                HashMap<String, String> row = new HashMap<>();
+                row.put("id", id);
+                row.put("public_key", publicKey);
+                res.add(row);
+            }
+
+            rs.close();
+            st.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return res;
+    }
+
+    public String getPublicKey(int sender) {
+        String key = null;
+        try {
+            String query = """
+                    SELECT public_key
+                    FROM user_info
+                    WHERE id=?
+                    """;
+            PreparedStatement st = conn.prepareStatement(query);
+            st.setInt(1, sender);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                key = rs.getString("public_key");
+                return key;
+            }
+
+            rs.close();
+            st.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return key;
+    }
 }
