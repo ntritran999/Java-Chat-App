@@ -21,11 +21,8 @@ public class OnlineListModel {
             String query = """
                     SELECT fullname,user_info.id
                     FROM account_info acc1
-                    JOIN friend f ON (acc1.user_id=f.user1 OR acc1.user_id=f.user2)
-                    JOIN account_info acc2 ON acc2.user_id=(CASE 
-                                                                WHEN acc1.user_id=f.user1 THEN f.user2
-                                                                ELSE f.user1
-                                                                END)
+                    JOIN friend f ON acc1.user_id=f.user1
+                    JOIN account_info acc2 ON f.user2=acc2.user_id
                     JOIN account ON acc2.username=account.username
                     JOIN user_info ON acc2.user_id=user_info.id
                     WHERE acc1.username=? and account.status='A'
