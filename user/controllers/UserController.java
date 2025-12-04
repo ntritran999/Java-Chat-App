@@ -609,17 +609,15 @@ public class UserController {
                         int msgId = Integer.valueOf(map.get("msgId"));
                         ChatPage.ChatLinePanel chatLine;
                         String content = map.get("content");
-                        boolean isBase64;
-                        try {
-                            Base64.getDecoder().decode(content.split("\\?")[0]);
-                            isBase64 = true;
-                        } catch (Exception e) {
-                            isBase64 = false;
-                        }
-                        if (isBase64) {
-                            byte[] gk = E2EGroup.getGroupKey(username, otherId, null);
-                            String message = E2ESession.decrypt(content, E2ESession.getSecretKeySpec(gk));
-                            chatLine = cp.createChatLinePanel(message, isSender, msgId);
+                        if (type.equals("multiple")) {
+                            try {
+                                Base64.getDecoder().decode(content.split("\\?")[0]);
+                                byte[] gk = E2EGroup.getGroupKey(username, otherId, null);
+                                String message = E2ESession.decrypt(content, E2ESession.getSecretKeySpec(gk));
+                                chatLine = cp.createChatLinePanel(message, isSender, msgId);
+                            } catch (Exception e) {
+                                chatLine = cp.createChatLinePanel(content, isSender, msgId);
+                            }
                         }
                         else {
                             chatLine = cp.createChatLinePanel(content, isSender, msgId);
