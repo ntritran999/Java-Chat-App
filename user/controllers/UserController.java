@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
+import admin.models.dbConnection;
 import admin.views.AdminDashboard;
 import server.ChatClient;
 import user.models.*;
@@ -65,6 +66,7 @@ public class UserController {
                         final int isAuthen = lpModel.getAuthen();
                         if (isAuthen == 2) {
                             userFrame.setVisible(false);
+                            dbConnection.createConDB();
                             AdminDashboard ad = new AdminDashboard();
                             ad.addWindowListener(new WindowAdapter() {
                                 @Override

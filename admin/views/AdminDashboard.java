@@ -6,6 +6,7 @@ import java.awt.event.*;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import admin.controllers.*;
+import admin.models.dbConnection;
 
 public class AdminDashboard extends JFrame{
     
@@ -238,6 +239,11 @@ public class AdminDashboard extends JFrame{
 
     public static void main(String[] args){
         FlatLightLaf.setup();
+        try {
+            dbConnection.createConDB();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         new AdminDashboard();
     }
 }
