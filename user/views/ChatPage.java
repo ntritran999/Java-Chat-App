@@ -173,7 +173,7 @@ public class ChatPage extends JPanel {
             return status;
         }
 
-        public void addcreateMsgButtonEvent(ActionListener l) {
+        public void addAddFriendButtonEvent(ActionListener l) {
             createMsgButton.addActionListener(l);
         }
 
@@ -623,6 +623,18 @@ public class ChatPage extends JPanel {
 
     public int showReportWarning() {
         return showWarning("Report chat");
+    }
+
+    public int showRemoveFriendWarning() {
+        return showWarning("Đã hủy kết bạn");
+    }
+
+    public int showBlockFriendWarning() {
+        return showWarning("Đã block tài khoản");
+    }
+
+    public void showAlreadySendFriendRequest(){
+        JOptionPane.showMessageDialog(this, "Đã gửi lời mời yêu cầu kết bạn từ trước", "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 
     public void showUpdateInfoFail(){

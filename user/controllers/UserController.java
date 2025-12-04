@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import admin.views.AdminDashboard;
 import server.ChatClient;
@@ -379,7 +380,7 @@ public class UserController {
         });
 
         cp.addListButtonEvent(e -> {
-
+            loadFriendList(cp, username);
         });
 
         cp.addOnlineButtonEvent(e -> {
@@ -449,15 +450,19 @@ public class UserController {
                 }.execute();
             }
         });
-
+        
         cp.addCreateMsgButtonEvent(e -> {
             msgSearchDialog.showSearchDialog();
         });
-
+        
         cp.addCreateGroupButtonEvent(e -> {
             groupSearchDialog.showSearchDialog();
         });
-
+        
+        cp.addAddFriendButtonEvent(e -> {
+            addFriendSearchDialog.showSearchDialog();
+        });
+        
         cp.addDeleteAllHistoryEvent(e -> {
             int op = JOptionPane.showConfirmDialog(null, 
                                                     "Bạn có muốn xoá tất cả lịch sử chat?",
@@ -527,9 +532,6 @@ public class UserController {
             loadConversations(cp, username, false);
         });
 
-        cp.addAddFriendButtonEvent(e -> {
-            addFriendSearchDialog.showSearchDialog();
-        });
 
         cp.addSearchThisChatEvent(e -> {
             SwingUtilities.getWindowAncestor((Component)e.getSource()).dispose();
@@ -727,6 +729,45 @@ public class UserController {
                                 openChat(cp, username, Integer.valueOf(map.get("id")), "single");
                             }
                         });
+
+                        fp.addBlockButtonEvent(ev ->{
+                            if(cp.showBlockFriendWarning() == 0) {
+                                new SwingWorker<Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground() throws SQLException {
+                                        FriendModel model = new FriendModel(username, Long.parseLong(map.get("id")), userModel.getConn());
+                                        model.blockFriend();
+                                        return null;
+                                    }
+
+                                    @Override
+                                    protected void done(){
+                                        loadOnlineFriends(cp, username);
+                                    }
+                                }.execute();
+                            }
+                            SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();  
+                        });
+
+                        fp.addRemoveFriendButtonEvent(ev ->{
+                            if(cp.showRemoveFriendWarning() == 0) {
+                                new SwingWorker<Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground() throws SQLException {
+                                        FriendModel model = new FriendModel(username, Long.parseLong(map.get("id")), userModel.getConn());
+                                        model.unFriendRelation();
+                                        return null;
+                                    }
+
+                                    @Override
+                                    protected void done(){
+                                        loadOnlineFriends(cp, username);
+                                    }
+                                }.execute();
+                            }
+                            SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
+                        });
+
                         fp.addReportButtonEvent(ev -> {
                             if(cp.showReportWarning() == 0) {
                                 new SwingWorker<Void, Void>() {
@@ -734,6 +775,97 @@ public class UserController {
                                     protected Void doInBackground() {
                                         SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
                                         return null;
+                                    }
+
+                                    @Override
+                                    protected void done(){
+                                        loadOnlineFriends(cp, username);
+                                    }
+                                }.execute();
+                            }
+                            SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
+                        });
+                        cp.addToListPanel(fp);
+                    }
+                    cp.updateListPanel();
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+        }.execute();
+    }
+
+    private void loadFriendList(ChatPage cp, String username) {
+        new SwingWorker<ArrayList<List<String>>, Void> () {
+            @Override
+            protected ArrayList<List<String>> doInBackground() throws Exception {
+                FriendModel model = new FriendModel(username, userModel.getConn());
+                return model.getFriendList();
+            }
+            @Override
+            protected void done() {
+                try {
+                    cp.clearListPanel();
+                    ArrayList<List<String>> list = get();
+                    for (var map : list) {
+                        ChatPage.FriendPanel fp = cp.createFriendPanel(map.get(0), map.get(2), new MouseAdapter() {
+                            @Override
+                            public void mousePressed(MouseEvent me) {
+                                cp.setChatName(map.get(0));
+                                openChat(cp, username, Integer.valueOf(map.get(1)), "single");
+                            }
+                        });
+
+                        fp.addBlockButtonEvent(ev ->{
+                            if(cp.showBlockFriendWarning() == 0) {
+                                new SwingWorker<Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground() throws SQLException {
+                                        FriendModel model = new FriendModel(username, Long.parseLong(map.get(1)), userModel.getConn());
+                                        model.blockFriend();
+                                        return null;
+                                    }
+
+                                    @Override
+                                    protected void done(){
+                                        loadFriendList(cp, username);
+                                    }
+                                }.execute();
+                            }
+                            SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();  
+                        });
+
+                        fp.addRemoveFriendButtonEvent(ev ->{
+                            if(cp.showRemoveFriendWarning() == 0) {
+                                new SwingWorker<Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground() throws SQLException {
+                                        FriendModel model = new FriendModel(username, Long.parseLong(map.get(1)), userModel.getConn());
+                                        model.unFriendRelation();
+                                        return null;
+                                    }
+
+                                    @Override
+                                    protected void done(){
+                                        loadFriendList(cp, username);
+                                    }
+                                }.execute();
+                            }
+                            SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
+                        });
+
+                        fp.addReportButtonEvent(ev -> {
+                            if(cp.showReportWarning() == 0) {
+                                new SwingWorker<Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground() {
+                                        SpamModel.sendReport(userModel.getConn(), map.get(1), username);
+                                        return null;
+                                    }
+
+                                    @Override
+                                    protected void done(){
+                                        loadFriendList(cp, username);
                                     }
                                 }.execute();
                             }
@@ -825,10 +957,66 @@ public class UserController {
                                             cp.setChatName(name);
                                             openChat(cp, username, id, "single");
                                         }
+                                    });                       
+                                    fp.addBlockButtonEvent(ev ->{
+                                        if(cp.showBlockFriendWarning() == 0) {
+                                            new SwingWorker<Void, Void>() {
+                                                @Override
+                                                protected Void doInBackground() throws SQLException {
+                                                    FriendModel model = new FriendModel(username, Long.parseLong(map.get("id")), userModel.getConn());
+                                                    model.blockFriend();
+                                                    return null;
+                                                }
+
+                                                @Override
+                                                protected void done(){
+                                                    loadConversations(cp, username, isPassive);
+                                                }
+                                            }.execute();
+                                        }
+                                        SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();  
                                     });
+
+                                    fp.addRemoveFriendButtonEvent(ev ->{
+                                        if(cp.showRemoveFriendWarning() == 0) {
+                                            new SwingWorker<Void, Void>() {
+                                                @Override
+                                                protected Void doInBackground() throws SQLException {
+                                                    FriendModel model = new FriendModel(username, Long.parseLong(map.get("id")), userModel.getConn());
+                                                    model.unFriendRelation();
+                                                    return null;
+                                                }
+
+                                                @Override
+                                                protected void done(){
+                                                    loadConversations(cp, username, isPassive);
+                                                }
+                                            }.execute();
+                                        }
+                                        SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
+                                    });
+
+                                    fp.addReportButtonEvent(ev -> {
+                                        if(cp.showReportWarning() == 0) {
+                                            new SwingWorker<Void, Void>() {
+                                                @Override
+                                                protected Void doInBackground() {
+                                                    SpamModel.sendReport(userModel.getConn(), map.get("id"), username);
+                                                    return null;
+                                                }
+
+                                                @Override
+                                                protected void done(){
+                                                    loadConversations(cp, username, isPassive);
+                                                }
+                                            }.execute();
+                                        }
+                                        SwingUtilities.getWindowAncestor((Component)ev.getSource()).dispose();
+                                    });
+                                    
                                     cp.addToListPanel(fp);
                                     break;
-                                case "stranger":
+                                case "stranger": 
                                     ChatPage.PersonPanel pp = cp.createPersonPanel(name, status, new MouseAdapter() {
                                         @Override
                                         public void mousePressed(MouseEvent me) {
@@ -836,6 +1024,31 @@ public class UserController {
                                             openChat(cp, username, id, "single");
                                         }
                                     });
+                                    pp.addAddFriendButtonEvent(ev -> {
+                                        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean,Void>() {
+                                            @Override
+                                            protected Boolean doInBackground() throws SQLException {
+                                                FriendModel model = new FriendModel(username, id, userModel.getConn());
+                                                return model.sendFriendRequest();
+                                            }
+
+                                            @Override
+                                            protected void done(){
+                                                try {
+                                                    boolean success = get();
+                                                    if(success)
+                                                        loadConversations(cp, username, isPassive);
+                                                    else 
+                                                        cp.showAlreadySendFriendRequest();
+                                                } catch (Exception e) {
+                                                    e.printStackTrace();
+                                                }                                       
+                                            }
+                                        };
+                                        worker.execute();
+                                    });
+
+
                                     pp.addReportButtonEvent(ev -> {
                                         if (cp.showReportWarning() == 0) {
                                             new SwingWorker<Void, Void>() {
@@ -886,7 +1099,46 @@ public class UserController {
     }
 
     private void loadAddFriendSearchResult(ChatPage cp, SearchDialog sd, String username) {
-        System.out.println("Results: ...");
+        String search = sd.getSearchField().getText();
+        if (!search.isEmpty()) {
+            new SwingWorker<PersonSearchModel, Void> () {
+                @Override
+                protected PersonSearchModel doInBackground() throws Exception {
+                    return new PersonSearchModel(userModel.getConn(), search, username);
+                }
+                @Override
+                protected void done() {
+                    try {
+                        PersonSearchModel psModel = get();
+                        ArrayList<HashMap<String, String>> list = psModel.getResults();
+                        sd.clearListPanel();
+                        for (var map : list) {
+                            MouseAdapter ma = null;
+                            int id = Integer.valueOf(map.get("id"));
+                            ma = new MouseAdapter() {
+                                @Override
+                                public void mousePressed(MouseEvent me) {
+                                    sd.dispose();
+                                    // friend request
+                                    FriendModel model = new FriendModel(username, id, userModel.getConn());
+                                    try {
+                                        model.sendFriendRequest();
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            };
+                            
+                            sd.addToListPanel(cp.createSearchResultPanel(map.get("name"), ma));
+                        }
+                        sd.updateListPanel();
+                    } catch (Exception e) {
+                        System.out.println(e);
+                    }
+                }
+            }.execute();
+        }
+
     }
 
     private void addDeleteChatLineEvent(ChatPage.ChatLinePanel chatLine, ChatModel chatModel, ChatPage cp, int msgId, String username, int otherId, String type) {
