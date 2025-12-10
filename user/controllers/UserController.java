@@ -24,7 +24,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 import admin.models.dbConnection;
 import admin.views.AdminDashboard;
@@ -501,11 +500,12 @@ public class UserController {
                     requestBody.put("messages", messages);
 
                     Properties prop = new Properties();
-                    FileReader fr = new FileReader("groq_api_key.properties");
+                    FileReader fr = new FileReader("llm_setting.properties");
                     prop.load(fr);
+                    String API_URL = prop.getProperty("API_URL");
                     String API_KEY = prop.getProperty("API_KEY");
                     HttpRequest request = HttpRequest.newBuilder()
-                                    .uri(new URI("https://api.groq.com/openai/v1/chat/completions"))
+                                    .uri(new URI(API_URL))
                                     .header("Content-Type", "application/json")
                                     .header("Authorization", "Bearer " + API_KEY)
                                     .POST(BodyPublishers.ofString(requestBody.toString()))
