@@ -11,15 +11,16 @@ public class dbConnection{
 
     public static Connection createConDB() throws SQLException{
         Properties prop = new Properties();
-        String DB_PASSWORD = null;
+        String DB_URL = null, DB_USER = null, DB_PASSWORD = null;
         try(FileReader fr = new FileReader("db.properties")){
             prop.load(fr);
+            DB_URL = prop.getProperty("DB_URL");
+            DB_USER = prop.getProperty("DB_USER");
             DB_PASSWORD = prop.getProperty("DB_PASSWORD");
         }catch(IOException e){
             System.out.println(e);
         }
-        String pathCon = "jdbc:postgresql://db.ubhgafkushcvjjpjqwxq.supabase.co:5432/postgres?user=postgres&password=" + DB_PASSWORD;
-        conn = DriverManager.getConnection(pathCon);
+        conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
         return conn;
     }
 

@@ -2,9 +2,12 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Properties;
 
 import org.json.JSONObject;
 
@@ -46,13 +49,26 @@ public class ChatClient {
         
     }
     public ChatClient() {
+        String host = "";
         try {
-            socket = new Socket("localhost", 4321);
+            Properties prop = new Properties();
+            FileReader fr = new FileReader("host.properties");
+            prop.load(fr);
+            host = prop.getProperty("HOST");
+        } catch (Exception e) {
+            e.printStackTrace();
+            closeClient();
+        }
+
+        try {
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(host, 4321), 2000);
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             listenThread = null;
             msgListener = null;
         } catch (Exception e) {
+            e.printStackTrace();
             closeClient();
         }
     }
