@@ -1,6 +1,7 @@
 package user.models;
 
 import java.sql.*;
+import java.util.HashMap;
 
 public class GroupSettingModel {
     public static void changeGroupName(Connection conn, int groupId, String newGroupName) throws SQLException {
@@ -16,9 +17,10 @@ public class GroupSettingModel {
         st.close();
     } 
 
-    public static void addMember(Connection conn, int groupId, String member) throws SQLException {
+    public static HashMap<String, String> addMember(Connection conn, int groupId, String member) throws SQLException {
+        HashMap<String, String> user = null;
         String query = """
-                    SELECT username
+                    SELECT username, ui.id, ui.public_key
                     FROM account_info ai
                     JOIN user_info ui ON ui.id=ai.user_id
                     WHERE (username=? OR fullname=?) AND ai.user_id NOT IN (SELECT user_id
@@ -31,11 +33,15 @@ public class GroupSettingModel {
         st.setInt(3, groupId);
         ResultSet rs = st.executeQuery();
         if (rs.next()) {
+            user = new HashMap<>();
+            user.put("id", rs.getString("id"));
+            user.put("public_key", rs.getString("public_key"));
             String username = rs.getString("username");
             AddGroupModel.addMember(conn, username, groupId, false);
         }
         rs.close();
         st.close();
+        return user;
     }
 
     private static boolean isAdmin(Connection conn, int groupId, String username) throws SQLException {

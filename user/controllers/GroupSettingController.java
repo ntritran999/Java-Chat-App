@@ -5,11 +5,17 @@ import java.sql.*;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
+import server.ChatClient;
+
+import java.util.HashMap;
+
 import user.models.GroupSettingModel;
+import user.services.E2EGroup;
+import user.services.E2ESession;
 import user.views.GroupSettingDialog;
 
 public class GroupSettingController {
-    public static void handleGroupSetting(Connection conn, GroupSettingDialog gsd, int groupId, String username) {
+    public static void handleGroupSetting(Connection conn, GroupSettingDialog gsd, int groupId, String username, int userId) {
         gsd.addChangeGroupNameEvent(e -> {
             String newGroupName = gsd.getNewGroupName();
             if (!newGroupName.isEmpty()) {
@@ -34,16 +40,32 @@ public class GroupSettingController {
         gsd.addAddMemEvent(e -> {
             String newMem = gsd.getMemberToAdd();
             if (!newMem.isEmpty()) {
-                new SwingWorker<Void, Void> () {
+                new SwingWorker<HashMap<String, String>, Void> () {
                     @Override
-                    protected Void doInBackground() throws Exception {
-                        GroupSettingModel.addMember(conn, groupId, newMem);
-                        return null;
+                    protected HashMap<String, String> doInBackground() throws Exception {
+                        return GroupSettingModel.addMember(conn, groupId, newMem);
                     }
                     @Override
                     protected void done() {
                         try {
-                            JOptionPane.showMessageDialog(gsd, "Thêm thành viên thành công");
+                            HashMap<String, String> user = get();
+                            if (user == null) {
+                                JOptionPane.showMessageDialog(gsd, "Thêm thành viên thất bại");
+                            }
+                            else {
+                                if (!E2EGroup.isFirstMsg(username, groupId)) {
+                                    int memId = Integer.valueOf(user.get("id"));
+                                    String publicKey = user.get("public_key");
+                                    byte[] groupKey = E2EGroup.getGroupKey(username, groupId);
+                                    byte[] sharedKey = E2ESession.getSharedSecret(username, memId, publicKey);
+                                    String egk = E2EGroup.encryptGroupKey(groupKey, sharedKey);
+                                    ChatClient client = new ChatClient();
+                                    client.initClient(userId, groupId, "multiple");
+                                    client.sendGroupKey(egk, groupId, memId);
+                                    client.disconnectClient();
+                                }
+                                JOptionPane.showMessageDialog(gsd, "Thêm thành viên thành công");
+                            }
                         } catch (Exception e) {
                             System.out.println(e);
                         }

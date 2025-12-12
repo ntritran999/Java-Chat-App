@@ -309,7 +309,7 @@ public class UserController {
             SwingWorker<List<String>, Void> worker = new SwingWorker<List<String>,Void>() {
                 @Override
                 protected List<String> doInBackground() throws SQLException{
-                    FriendRequestModel model = new FriendRequestModel(username);
+                    FriendRequestModel model = new FriendRequestModel(userModel.getConn(), username);
                     return model.fetchingFriendRequest();
                 }
 
@@ -323,7 +323,7 @@ public class UserController {
                                 SwingWorker<Boolean, Void> worker1 = new SwingWorker<Boolean, Void>(){
                                     @Override 
                                     protected Boolean doInBackground() throws SQLException{
-                                        FriendRequestModel model = new FriendRequestModel(username, ob);
+                                        FriendRequestModel model = new FriendRequestModel(userModel.getConn(), username, ob);
                                         return model.updateAcceptedToDb();
                                     }
 
@@ -348,7 +348,7 @@ public class UserController {
                             SwingWorker<Boolean, Void> worker2 = new SwingWorker<Boolean, Void>(){
                                 @Override 
                                 protected Boolean doInBackground() throws SQLException{
-                                    FriendRequestModel model = new FriendRequestModel(username, ob);
+                                    FriendRequestModel model = new FriendRequestModel(userModel.getConn(), username, ob);
                                     return model.updateDeclineToDb();
                                 }
 
@@ -401,17 +401,23 @@ public class UserController {
                         if (msgType.equals("single"))
                             return cm.saveSingleChat(msg);
                         
-                        boolean[] isFirstMsg = {false};
-                        byte[] groupKey = E2EGroup.getGroupKey(username, receiver, isFirstMsg);
+                        byte[] groupKey = null;
+                        boolean isFirstMsg = E2EGroup.isFirstMsg(username, receiver);
+                        if (isFirstMsg) {
+                            groupKey = E2EGroup.genNewGroupKey(username, receiver);
+                        }
+                        else {
+                            groupKey = E2EGroup.getGroupKey(username, receiver);
+                        }
                         if (groupKey != null) {
-                            if (isFirstMsg[0]) {
+                            if (isFirstMsg) {
                                 ArrayList<HashMap<String, String>> members = cm.findMembers();
                                 for (var mem: members) {
                                     int memId = Integer.valueOf(mem.get("id"));
                                     String publicKey = mem.get("public_key");
                                     byte[] sharedKey = E2ESession.getSharedSecret(username, memId, publicKey);
                                     String egk = E2EGroup.encryptGroupKey(groupKey, sharedKey);
-                                        client.sendGroupKey(egk, receiver, memId);
+                                    client.sendGroupKey(egk, receiver, memId);
                                 }
                             }
 
@@ -612,7 +618,7 @@ public class UserController {
                         if (type.equals("multiple")) {
                             try {
                                 Base64.getDecoder().decode(content.split("\\?")[0]);
-                                byte[] gk = E2EGroup.getGroupKey(username, otherId, null);
+                                byte[] gk = E2EGroup.getGroupKey(username, otherId);
                                 String message = E2ESession.decrypt(content, E2ESession.getSecretKeySpec(gk));
                                 chatLine = cp.createChatLinePanel(message, isSender, msgId);
                             } catch (Exception e) {
@@ -633,7 +639,7 @@ public class UserController {
                     }
     
                     if (client != null) 
-                    client.disconnectClient();
+                        client.disconnectClient();
 
                     client = new ChatClient();
                     client.initClient(userId, otherId, type);
@@ -674,7 +680,7 @@ public class UserController {
                         else if (msg.has("group_id")) {
                             if (msg.getInt("group_id") == otherId) {
                                 String content = msg.getString("content");
-                                byte[] gk = E2EGroup.getGroupKey(username, otherId, null);
+                                byte[] gk = E2EGroup.getGroupKey(username, otherId);
                                 try {
                                     String decryptContent = E2ESession.decrypt(content, E2ESession.getSecretKeySpec(gk));
                                     ChatPage.ChatLinePanel chatLine = cp.createChatLinePanel(decryptContent, 
@@ -1072,7 +1078,7 @@ public class UserController {
                                     });
                                     gp.addGroupSettingButtonEvent(e -> {
                                         GroupSettingDialog groupSettingDialog = new GroupSettingDialog(userFrame);
-                                        GroupSettingController.handleGroupSetting(userModel.getConn(), groupSettingDialog, id, username);
+                                        GroupSettingController.handleGroupSetting(userModel.getConn(), groupSettingDialog, id, username, client.getId());
                                         loadConversations(cp, username, false);
                                     });
                                     cp.addToListPanel(gp);

@@ -175,4 +175,8 @@ public class ChatClient {
     public String getMsgType() {
         return msgType;
     }
+
+    public int getId() {
+        return userId;
+    }
 }
