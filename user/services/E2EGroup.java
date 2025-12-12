@@ -17,30 +17,40 @@ public class E2EGroup {
         E2ESession.saveKeyToFile(key, username, fileName);
     }
 
-    public static byte[] getGroupKey(String username, int groupId, boolean[] isFirstMsg) {
+    public static boolean isFirstMsg(String username, int groupId) {
+        Path userDir = Paths.get(saveDir.toString(), username);
+        String fileName = groupId + "_group_key.txt";
+        String path = Paths.get(userDir.toString(), fileName).toString();
+        if (new File(path).isFile()) {
+            return false;
+        }
+        return true;
+    }
+
+    public static byte[] genNewGroupKey(String username, int groupId) {
+        try {
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+            keyGen.init(128);
+            byte[] sk = keyGen.generateKey().getEncoded();
+            saveGroupKey(Base64.getEncoder().encodeToString(sk), username, groupId);
+            return sk;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static byte[] getGroupKey(String username, int groupId) {
         try {
             Path userDir = Paths.get(saveDir.toString(), username);
             String fileName = groupId + "_group_key.txt";
             String path = Paths.get(userDir.toString(), fileName).toString();
-            if (new File(path).isFile()) {
-                FileReader reader = new FileReader(path);
-                byte[] key = Base64.getDecoder().decode(reader.readAllAsString());
-                reader.close();
-                if (isFirstMsg != null)
-                    isFirstMsg[0] = false;
-                return key;
-            }
-            else {
-                KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-                keyGen.init(128);
-                byte[] sk = keyGen.generateKey().getEncoded();
-                saveGroupKey(Base64.getEncoder().encodeToString(sk), username, groupId);
-                if (isFirstMsg != null)
-                    isFirstMsg[0] = true;
-                return sk;
-            }
+            FileReader reader = new FileReader(path);
+            byte[] key = Base64.getDecoder().decode(reader.readAllAsString());
+            reader.close();
+            return key;
         } catch (Exception e) {
-            System.out.println();
+            e.printStackTrace();
         }
         return null;
     }

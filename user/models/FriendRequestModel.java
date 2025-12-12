@@ -1,5 +1,4 @@
 package user.models;
-import admin.models.dbConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,14 +10,16 @@ import java.util.*;
 public class FriendRequestModel {
     private String username;
     private String request;
-    private Connection conn = dbConnection.getConnection();
-    public FriendRequestModel(String username){
+    private Connection conn;
+    public FriendRequestModel(Connection conn, String username){
         this.username = username;
+        this.conn = conn;
     }
 
-    public FriendRequestModel(String username, String request){
+    public FriendRequestModel(Connection conn, String username, String request){
         this.username = username;
         this.request = request;
+        this.conn = conn;
     }
 
     // fetching api

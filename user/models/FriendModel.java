@@ -1,5 +1,4 @@
 package user.models;
-import admin.models.dbConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

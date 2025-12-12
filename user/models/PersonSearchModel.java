@@ -23,10 +23,11 @@ public class PersonSearchModel {
                     SELECT user_info.fullname, find_ai.user_id
                     FROM account
                     JOIN account_info find_ai ON find_ai.username=account.username
-                    LEFT JOIN block ON block.user1=find_ai.user_id
                     JOIN account_info cur_ai ON cur_ai.username=?
                     JOIN user_info ON find_ai.user_id=user_info.id
-                    WHERE account.username!=? AND account.username ILIKE ? AND (block.user2 IS NULL OR cur_ai.user_id!=block.user2)
+                    WHERE account.username!=? AND account.username ILIKE ? AND find_ai.user_id NOT IN (SELECT user1
+                                                                                                    FROM block
+                                                                                                    WHERE user2=cur_ai.user_id)
                     """;
             PreparedStatement st = conn.prepareStatement(query);
             st.setString(1, username);
@@ -53,9 +54,10 @@ public class PersonSearchModel {
                         SELECT user_info.fullname, user_info.id
                         FROM user_info
                         JOIN account_info find_ai ON find_ai.user_id=user_info.id
-                        LEFT JOIN block ON block.user1=find_ai.user_id
                         JOIN account_info cur_ai ON cur_ai.username=?
-                        WHERE find_ai.username!=? AND user_info.fullname ILIKE ? AND (block.user2 IS NULL OR cur_ai.user_id!=block.user2)
+                        WHERE find_ai.username!=? AND user_info.fullname ILIKE ? AND find_ai.user_id NOT IN (SELECT user1
+                                                                                                    FROM block
+                                                                                                    WHERE user2=cur_ai.user_id)
                         """;
                 st = conn.prepareStatement(query);
                 st.setString(1, username);
